@@ -1,55 +1,48 @@
-# Dulce Miel Mobile — prototipo inicial
+# Dulce Miel Mobile
 
-Prototipo navegable de la migración móvil de **Dulce Miel**, desarrollado con Kotlin, Android Studio, Jetpack Compose y una separación inicial basada en MVVM.
+Prototipo Android en Kotlin y Jetpack Compose para consultar un catálogo de muestra, planificar una compra y conservar un carrito y pedidos de demostración en el dispositivo.
 
-## Alcance del prototipo
+## Funciones actuales
 
-Este avance permite demostrar el flujo principal antes de conectar servicios reales:
+- Inicio, catálogo, detalle, carrito, pedidos locales y consejos de compra y conservación.
+- Cantidades limitadas por las existencias de muestra y total calculado en céntimos.
+- Carrito y pedidos guardados en preferencias privadas del dispositivo. Se recuperan al reiniciar la aplicación.
+- Mensaje explícito al guardar un pedido: **no se ha enviado a Dulce Miel**.
 
-- Inicio con productos destacados y acceso al consumo responsable.
-- Catálogo con precio y stock visible.
-- Detalle del producto con información de conservación.
-- Carrito con cantidad, total transparente y sin productos añadidos automáticamente.
-- Seguimiento claro del estado de un pedido.
-- Sección ODS 12 con recomendaciones de compra, conservación, reutilización y control de promociones.
-- Etiquetas y descripciones de accesibilidad en los controles principales.
+Los productos, precios y existencias son datos codificados para la demostración. No hay autenticación, API, pagos, notificaciones ni seguimiento de entregas real.
 
-Los productos, existencias y pedidos son **datos simulados**. La API REST, Firebase, autenticación y pagos quedan fuera de este prototipo inicial y se incorporarán en iteraciones posteriores.
+## Arquitectura
 
-## Relación con la semana 4
+La estructura sigue los paquetes del ejemplo de clase:
 
-El proyecto sirve como evidencia del **prototipo inicial** y permite validar criterios de aceptación relacionados con:
+```text
+com.dulcemiel.app
+├── model
+│   ├── Producto.kt y Pedido.kt
+│   └── provider/FuenteDatosLocal.kt y ProveedorProductos.kt
+├── repository/RepositorioTienda.kt
+├── ui/theme/Colores.kt y TemaDulceMiel.kt
+├── view/ActividadPrincipal.kt, VistaPrincipal.kt y pantallas separadas
+└── viewmodel/EstadoAplicacion.kt, LineaCarrito.kt, Pantalla.kt y ModeloVistaTienda.kt
+```
 
-1. Consultar productos, precios y existencias antes de comprar.
-2. Añadir un producto de forma voluntaria y visualizar el total.
-3. Consultar el estado de un pedido con etapas comprensibles.
-4. Recibir orientación vinculada con producción y consumo responsables (ODS 12).
-5. Evitar patrones de marketing irresponsable: no hay productos preseleccionados, costos ocultos ni promociones obligatorias.
+La vista solo dibuja el estado y envía eventos. `ModeloVistaTienda` valida acciones, prepara las líneas y el total del carrito, y actualiza `EstadoAplicacion`; `RepositorioTienda` media el acceso al catálogo de muestra y a la fuente local. `ProveedorProductos` suministra los datos de muestra; `FuenteDatosLocal` conserva carrito y pedidos mediante `SharedPreferences` y JSON. La actividad principal prepara el tema y las dependencias de la aplicación.
 
-El Product Backlog, las reglas de negocio y los criterios de aceptación deben mantenerse también en el documento académico de la semana 4.
+## Abrir en otro equipo
 
-## Abrir y ejecutar
+1. Descomprimir el ZIP completo y abrir la carpeta `dulcemiel-app-movil` en Android Studio.
+2. Instalar **Android SDK Platform 37** desde SDK Manager si Android Studio lo solicita. La primera sincronización necesita Internet para descargar Gradle 9.5.0, Android Gradle Plugin 9.3.0, Kotlin 2.4.20 y las bibliotecas AndroidX.
+3. Usar el JDK configurado por Android Studio. El proyecto declara Java 21 para el código y el archivo `gradle/gradle-daemon-jvm.properties` solicita un JDK 25 para ejecutar Gradle; Gradle puede descargarlo si no está disponible.
+4. Seleccionar un emulador o teléfono con Android 8.0 (API 26) o posterior y ejecutar el módulo `app`.
 
-1. En Android Studio, selecciona **Open**.
-2. Abre la carpeta `App movil`.
-3. Espera a que finalice la sincronización de Gradle.
-4. Selecciona el dispositivo virtual **Pixel 10 API 36**.
-5. Presiona **Run app**.
+También se puede compilar con `gradlew.bat :app:assembleDebug` en Windows o `./gradlew :app:assembleDebug` en macOS y Linux, con el Android SDK configurado en el equipo. El proyecto usa `minSdk 26`, `targetSdk 36` y `compileSdk 37`. No se incluye `local.properties`: Android Studio genera ese archivo para la ruta del SDK de cada equipo.
 
-Configuración principal: `compileSdk 37`, `targetSdk 36`, `minSdk 26`. Se compila con API 37 porque la versión actual de Compose lo requiere, pero se ejecuta y prueba en Android 16 (API 36).
+## Comprobación manual
 
-## Capturas para sustentación
+1. Añadir un producto, cambiar su cantidad y verificar el total.
+2. Cerrar y abrir la aplicación; confirmar que el carrito se conserva.
+3. Guardar el pedido local y comprobar que se muestra en Pedidos con el aviso de que no fue enviado.
+4. Reiniciar y comprobar que el pedido permanece y el carrito está vacío.
+5. Recorrer controles con TalkBack y fuente ampliada antes de cualquier entrega a usuarios.
 
-- [Inicio](docs/prototipo-capturas/01-inicio.png)
-- [Catálogo](docs/prototipo-capturas/02-catalogo.png)
-- [Detalle del producto](docs/prototipo-capturas/03-detalle.png)
-- [Carrito](docs/prototipo-capturas/04-carrito.png)
-- [Seguimiento de pedidos](docs/prototipo-capturas/05-pedidos.png)
-- [ODS 12](docs/prototipo-capturas/06-ods12.png)
-
-## Estructura principal
-
-- `MainActivity.kt`: interfaz, navegación y estado del prototipo.
-- `DulceMielViewModel`: estado de pantalla, selección de producto y carrito.
-- `docs/prototipo-capturas`: evidencias visuales obtenidas del emulador.
-
+Los documentos académicos se entregan por separado del código de la aplicación.

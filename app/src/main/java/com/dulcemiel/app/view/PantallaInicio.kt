@@ -1,0 +1,87 @@
+package com.dulcemiel.app.view
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.dulcemiel.app.model.Pedido
+import com.dulcemiel.app.model.Producto
+import com.dulcemiel.app.ui.theme.Miel as Honey
+import com.dulcemiel.app.ui.theme.MielOscura as HoneyDark
+import com.dulcemiel.app.ui.theme.Crema as Cream
+import com.dulcemiel.app.ui.theme.Hoja as Leaf
+import com.dulcemiel.app.ui.theme.Tinta as Ink
+import com.dulcemiel.app.viewmodel.ModeloVistaTienda
+import com.dulcemiel.app.viewmodel.Pantalla
+
+@Composable
+internal fun PantallaInicio(products: List<Producto>, open: (Producto) -> Unit, go: (Pantalla) -> Unit) {
+    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                shape = RoundedCornerShape(28.dp)
+            ) {
+                Box(
+                    Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Honey, Color(0xFFFFD66B)))).padding(22.dp)
+                ) {
+                    Column(Modifier.fillMaxWidth(.72f)) {
+                        Text("Miel que conecta", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = HoneyDark)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Conoce el producto, compra lo necesario y sigue tu pedido.", color = HoneyDark, lineHeight = 21.sp)
+                        Spacer(Modifier.height(16.dp))
+                        Button(onClick = { go(Pantalla.CATALOGO) }, colors = ButtonDefaults.buttonColors(containerColor = HoneyDark)) {
+                            Text("Ver catálogo")
+                        }
+                    }
+                    Icon(Icons.Default.Hive, contentDescription = null, tint = Color.White.copy(alpha = .72f), modifier = Modifier.size(92.dp).align(Alignment.CenterEnd))
+                }
+            }
+        }
+        item { TituloSeccion("Productoos destacados", "Catálogo de demostración") }
+        item {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(products.take(3)) { TarjetaProducto(it, { open(it) }) }
+            }
+        }
+        item {
+            Card(
+                Modifier.fillMaxWidth().clickable { go(Pantalla.CONSUMO) },
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFE7F4E8)),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Eco, contentDescription = null, tint = Leaf, modifier = Modifier.size(42.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Consume con propósito", fontWeight = FontWeight.Bold, color = Color(0xFF1B5E20))
+                        Text("Consejos para conservar la miel y reducir desperdicios.", fontSize = 13.sp)
+                    }
+                    Icon(Icons.Default.ChevronRight, contentDescription = "Abrir consejos")
+                }
+            }
+        }
+    }
+}

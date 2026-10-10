@@ -7,7 +7,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DulceMiel">
         <activity
-            android:name=".MainActivity"
+            android:name=".view.ActividadPrincipal"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
