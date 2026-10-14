@@ -38,9 +38,14 @@ import com.dulcemiel.app.viewmodel.Pantalla
 import com.dulcemiel.app.viewmodel.LineaCarrito
 
 @Composable
-internal fun PantallaCarrito(lineas: List<LineaCarrito>, totalCentimos: Int, add: (Producto) -> Unit, remove: (Producto) -> Unit, registrar: () -> Unit) {
+internal fun PantallaCarrito(lineas: List<LineaCarrito>, totalCentimos: Int, add: (Producto) -> Unit, remove: (Producto) -> Unit, eliminar: (Producto) -> Unit, vaciar: () -> Unit, registrar: () -> Unit) {
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { TituloSeccion("Compra sin sorpresas", "Ningún producto se añade automáticamente") }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                TituloSeccion("Compra sin sorpresas", "Revisa tus cantidades antes de confirmar")
+                if (lineas.isNotEmpty()) TextButton(onClick = vaciar) { Text("Vaciar") }
+            }
+        }
         if (lineas.isEmpty()) {
             item {
                 Column(Modifier.fillParentMaxSize().padding(top = 70.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -59,10 +64,12 @@ internal fun PantallaCarrito(lineas: List<LineaCarrito>, totalCentimos: Int, add
                         Column(Modifier.weight(1f)) {
                             Text(product.nombre, fontWeight = FontWeight.Bold)
                             Text("${formatoMoneda(product.precioCentimos)} c/u", fontSize = 12.sp)
+                            if (product.existencias != Int.MAX_VALUE) Text("${product.existencias} disponibles", fontSize = 12.sp, color = Leaf)
                         }
                         IconButton(onClick = { remove(product) }) { Icon(Icons.Default.RemoveCircleOutline, contentDescription = "Quitar uno") }
                         Text("${linea.cantidad}", fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { add(product) }) { Icon(Icons.Default.AddCircleOutline, contentDescription = "Agregar uno") }
+                        IconButton(onClick = { add(product) }, enabled = product.existencias == Int.MAX_VALUE || linea.cantidad < product.existencias) { Icon(Icons.Default.AddCircleOutline, contentDescription = "Agregar uno") }
+                        IconButton(onClick = { eliminar(product) }) { Icon(Icons.Default.DeleteOutline, contentDescription = "Eliminar ${product.nombre}") }
                     }
                 }
             }
@@ -72,7 +79,7 @@ internal fun PantallaCarrito(lineas: List<LineaCarrito>, totalCentimos: Int, add
                     Text("Total visible", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Text(formatoMoneda(totalCentimos), fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = HoneyDark)
                 }
-                Button(onClick = registrar, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = HoneyDark)) { Text("Guardar pedido local") }
+                Button(onClick = registrar, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = HoneyDark)) { Text("Continuar con datos de entrega") }
             }
         }
     }

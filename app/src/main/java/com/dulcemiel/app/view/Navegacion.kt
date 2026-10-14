@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -38,7 +39,7 @@ import com.dulcemiel.app.viewmodel.Pantalla
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun BarraSuperior(screen: Pantalla, home: () -> Unit) {
+internal fun BarraSuperior(screen: Pantalla, sesionIniciada: Boolean, nombreUsuario: String?, home: () -> Unit, abrirPerfil: () -> Unit, cerrarSesion: () -> Unit) {
     TopAppBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -53,8 +54,18 @@ internal fun BarraSuperior(screen: Pantalla, home: () -> Unit) {
             }
         },
         navigationIcon = {
-            if (screen == Pantalla.DETALLE) IconButton(onClick = home) {
+            if (screen in setOf(Pantalla.DETALLE, Pantalla.DETALLE_PEDIDO, Pantalla.PERFIL, Pantalla.DASHBOARD, Pantalla.ADMIN_PRODUCTOS, Pantalla.ADMIN_PEDIDOS, Pantalla.ADMIN_PROMOCIONES, Pantalla.ADMIN_USUARIOS, Pantalla.ADMIN_SITIO)) IconButton(onClick = home) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver al inicio")
+            }
+        },
+        actions = {
+            if (sesionIniciada) {
+                TextButton(onClick = abrirPerfil, contentPadding = PaddingValues(horizontal = 4.dp)) {
+                    Text(nombreUsuario.orEmpty(), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 90.dp))
+                }
+                IconButton(onClick = cerrarSesion) {
+                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Cream)
@@ -66,8 +77,18 @@ private fun Pantalla.title() = when (this) {
     Pantalla.CATALOGO -> "Catálogo"
     Pantalla.CARRITO -> "Tu carrito"
     Pantalla.PEDIDOS -> "Seguimiento"
+    Pantalla.DETALLE_PEDIDO -> "Detalle del pedido"
     Pantalla.CONSUMO -> "Consumo"
     Pantalla.DETALLE -> "Detalle del producto"
+    Pantalla.LOGIN -> "Tu cuenta"
+    Pantalla.PERFIL -> "Mi perfil"
+    Pantalla.DASHBOARD -> "Administración"
+    Pantalla.ADMIN_PRODUCTOS -> "Administrar productos"
+    Pantalla.ADMIN_PEDIDOS -> "Administrar pedidos"
+    Pantalla.ADMIN_PROMOCIONES -> "Administrar promociones"
+    Pantalla.ADMIN_USUARIOS -> "Administrar usuarios"
+    Pantalla.ADMIN_SITIO -> "Inicio y marca"
+    Pantalla.CHECKOUT -> "Finalizar pedido"
 }
 
 @Composable

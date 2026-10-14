@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dulcemiel.app.model.Pedido
 import com.dulcemiel.app.model.Producto
+import com.dulcemiel.app.model.Promocion
+import com.dulcemiel.app.model.SlideInicio
 import com.dulcemiel.app.ui.theme.Miel as Honey
 import com.dulcemiel.app.ui.theme.MielOscura as HoneyDark
 import com.dulcemiel.app.ui.theme.Crema as Cream
@@ -37,7 +39,11 @@ import com.dulcemiel.app.viewmodel.ModeloVistaTienda
 import com.dulcemiel.app.viewmodel.Pantalla
 
 @Composable
-internal fun PantallaInicio(products: List<Producto>, open: (Producto) -> Unit, go: (Pantalla) -> Unit) {
+internal fun PantallaInicio(
+    products: List<Producto>, empresa: String, descripcion: String, logoUrl: String?,
+    carrusel: List<SlideInicio>, promociones: List<Promocion>, mision: String, vision: String,
+    open: (Producto) -> Unit, go: (Pantalla) -> Unit
+) {
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item {
             Card(
@@ -48,19 +54,52 @@ internal fun PantallaInicio(products: List<Producto>, open: (Producto) -> Unit, 
                     Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Honey, Color(0xFFFFD66B)))).padding(22.dp)
                 ) {
                     Column(Modifier.fillMaxWidth(.72f)) {
-                        Text("Miel que conecta", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = HoneyDark)
+                        Text(empresa, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = HoneyDark)
                         Spacer(Modifier.height(8.dp))
-                        Text("Conoce el producto, compra lo necesario y sigue tu pedido.", color = HoneyDark, lineHeight = 21.sp)
+                        Text(descripcion, color = HoneyDark, lineHeight = 21.sp)
                         Spacer(Modifier.height(16.dp))
                         Button(onClick = { go(Pantalla.CATALOGO) }, colors = ButtonDefaults.buttonColors(containerColor = HoneyDark)) {
                             Text("Ver catálogo")
                         }
                     }
-                    Icon(Icons.Default.Hive, contentDescription = null, tint = Color.White.copy(alpha = .72f), modifier = Modifier.size(92.dp).align(Alignment.CenterEnd))
+                    ImagenRemota(logoUrl, "Logo de $empresa", Modifier.size(92.dp).clip(CircleShape).align(Alignment.CenterEnd), Icons.Default.Hive)
                 }
             }
         }
-        item { TituloSeccion("Productoos destacados", "Catálogo de demostración") }
+        if (carrusel.isNotEmpty()) {
+            item { TituloSeccion("Novedades", "Información de Dulce Miel") }
+            item {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(carrusel) { slide ->
+                        Card(Modifier.width(260.dp), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Column {
+                                ImagenRemota(slide.imagenUrl, slide.titulo, Modifier.fillMaxWidth().height(125.dp).clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)), Icons.Default.Image)
+                                Column(Modifier.padding(14.dp)) {
+                                    Text(slide.titulo, fontWeight = FontWeight.Bold)
+                                    slide.descripcion?.takeIf { it.isNotBlank() }?.let { Text(it, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (promociones.isNotEmpty()) {
+            item {
+                val promocion = promociones.first()
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFE7F4E8)), shape = RoundedCornerShape(20.dp)) {
+                    Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.LocalOffer, contentDescription = null, tint = Leaf, modifier = Modifier.size(34.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("${promocion.descuento}% OFF · ${promocion.titulo}", fontWeight = FontWeight.Bold, color = Color(0xFF1B5E20))
+                            promocion.descripcion?.let { Text(it, fontSize = 13.sp) }
+                        }
+                    }
+                }
+            }
+        }
+        item { TituloSeccion("Productos destacados", "Conoce nuestra selección") }
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(products.take(3)) { TarjetaProducto(it, { open(it) }) }
@@ -80,6 +119,16 @@ internal fun PantallaInicio(products: List<Producto>, open: (Producto) -> Unit, 
                         Text("Consejos para conservar la miel y reducir desperdicios.", fontSize = 13.sp)
                     }
                     Icon(Icons.Default.ChevronRight, contentDescription = "Abrir consejos")
+                }
+            }
+        }
+        if (mision.isNotBlank() || vision.isNotBlank()) {
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(20.dp)) {
+                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (mision.isNotBlank()) { Text("Nuestra misión", fontWeight = FontWeight.Bold, color = HoneyDark); Text(mision, fontSize = 13.sp) }
+                        if (vision.isNotBlank()) { Text("Nuestra visión", fontWeight = FontWeight.Bold, color = HoneyDark); Text(vision, fontSize = 13.sp) }
+                    }
                 }
             }
         }

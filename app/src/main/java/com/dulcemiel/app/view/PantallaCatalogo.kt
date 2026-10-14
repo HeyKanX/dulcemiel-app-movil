@@ -39,20 +39,18 @@ import com.dulcemiel.app.viewmodel.Pantalla
 @Composable
 internal fun PantallaCatalogo(products: List<Producto>, open: (Producto) -> Unit, add: (Producto) -> Unit) {
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { TituloSeccion("Elige de manera informada", "Precios y existencias de demostración") }
+        item { TituloSeccion("Elige de manera informada", "Precios y existencias actualizados") }
         items(products) { product ->
             Card(Modifier.fillMaxWidth().clickable { open(product) }, colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(18.dp)) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(72.dp).clip(RoundedCornerShape(15.dp)).background(Color(0xFFFFF0C2)), contentAlignment = Alignment.Center) {
-                        Icon(iconoProducto(product), contentDescription = null, tint = HoneyDark, modifier = Modifier.size(38.dp))
-                    }
+                    ImagenProducto(product, Modifier.size(72.dp).clip(RoundedCornerShape(15.dp)))
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
                         Text(product.nombre, fontWeight = FontWeight.Bold)
                         Text("${product.existencias} disponibles", color = Leaf, fontSize = 12.sp)
                         Text(formatoMoneda(product.precioCentimos), fontWeight = FontWeight.ExtraBold, color = HoneyDark)
                     }
-                    FilledIconButton(onClick = { add(product) }, colors = IconButtonDefaults.filledIconButtonColors(containerColor = Honey)) {
+                    FilledIconButton(onClick = { add(product) }, enabled = product.existencias > 0, colors = IconButtonDefaults.filledIconButtonColors(containerColor = Honey)) {
                         Icon(Icons.Default.AddShoppingCart, contentDescription = "Agregar ${product.nombre}", tint = HoneyDark)
                     }
                 }

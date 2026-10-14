@@ -1,10 +1,13 @@
 .gradle/
+.kotlin/
 .idea/
 build/
 app/build/
 local.properties
 *.iml
 captures/
+*.apk
+*.aab
 
 # Python generated files
 __pycache__/

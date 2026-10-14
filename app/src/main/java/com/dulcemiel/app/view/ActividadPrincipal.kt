@@ -5,7 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.dulcemiel.app.model.provider.FuenteDatosLocal
+import com.dulcemiel.app.network.Sesion
+import com.dulcemiel.app.network.crearApi
 import com.dulcemiel.app.repository.RepositorioTienda
 import com.dulcemiel.app.ui.theme.TemaDulceMiel
 import com.dulcemiel.app.viewmodel.FabricaModeloVistaTienda
@@ -16,7 +17,8 @@ class ActividadPrincipal : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TemaDulceMiel {
-                DulceMielApp(viewModel(factory = FabricaModeloVistaTienda(RepositorioTienda(FuenteDatosLocal(applicationContext)))))
+                val sesion = Sesion(applicationContext)
+                DulceMielApp(viewModel(factory = FabricaModeloVistaTienda(RepositorioTienda(crearApi { sesion.token }, sesion))))
             }
         }
     }

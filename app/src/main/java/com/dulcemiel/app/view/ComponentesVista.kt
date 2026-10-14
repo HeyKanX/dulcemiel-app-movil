@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -35,6 +36,7 @@ import com.dulcemiel.app.ui.theme.Hoja as Leaf
 import com.dulcemiel.app.ui.theme.Tinta as Ink
 import com.dulcemiel.app.viewmodel.ModeloVistaTienda
 import com.dulcemiel.app.viewmodel.Pantalla
+import coil3.compose.AsyncImage
 
 @Composable
 internal fun TituloSeccion(title: String, subtitle: String) {
@@ -52,14 +54,28 @@ internal fun TarjetaProducto(product: Producto, open: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Box(Modifier.fillMaxWidth().height(92.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFFFFF0C2)), contentAlignment = Alignment.Center) {
-                Icon(iconoProducto(product), contentDescription = null, tint = HoneyDark, modifier = Modifier.size(52.dp))
-            }
+            ImagenProducto(product, Modifier.fillMaxWidth().height(92.dp).clip(RoundedCornerShape(16.dp)))
             Spacer(Modifier.height(12.dp))
             Text(product.etiqueta, color = Leaf, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             Text(product.nombre, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(formatoMoneda(product.precioCentimos), color = HoneyDark, fontWeight = FontWeight.ExtraBold)
         }
+    }
+}
+
+@Composable
+internal fun ImagenProducto(producto: Producto, modifier: Modifier) {
+    ImagenRemota(producto.imagenUrl, producto.nombre, modifier, iconoProducto(producto))
+}
+
+@Composable
+internal fun ImagenRemota(url: String?, descripcion: String?, modifier: Modifier, fallback: ImageVector = Icons.Default.Image) {
+    if (url.isNullOrBlank()) {
+        Box(modifier.background(Color(0xFFFFF0C2)), contentAlignment = Alignment.Center) {
+            Icon(fallback, contentDescription = descripcion, tint = HoneyDark, modifier = Modifier.size(52.dp))
+        }
+    } else {
+        AsyncImage(model = url, contentDescription = descripcion, contentScale = ContentScale.Crop, modifier = modifier)
     }
 }
 

@@ -37,18 +37,19 @@ import com.dulcemiel.app.viewmodel.ModeloVistaTienda
 import com.dulcemiel.app.viewmodel.Pantalla
 
 @Composable
-internal fun PantallaPedidos(pedidos: List<Pedido>, mensaje: String?) {
+internal fun PantallaPedidos(pedidos: List<Pedido>, abrir: (Long) -> Unit) {
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item { TituloSeccion("Pedidos en este dispositivo", "Registro local de demostración") }
-        if (mensaje != null) item { Text(mensaje, color = Leaf) }
-        if (pedidos.isEmpty()) item { Text("Aún no hay pedidos guardados. Ningún pedido se ha enviado a la empresa.") }
+        item { TituloSeccion("Mis pedidos", "Consulta el estado de tus compras") }
+        if (pedidos.isEmpty()) item { Text("Aún no tienes pedidos registrados.") }
         items(pedidos) { pedido ->
-            Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Card(Modifier.fillMaxWidth().clickable { abrir(pedido.id) }, colors = CardDefaults.cardColors(containerColor = Color.White)) {
                 Column(Modifier.padding(18.dp)) {
-                    Text("Pedido local #${pedido.id}", fontWeight = FontWeight.Bold)
-                    Text("${pedido.cantidadUnidades} unidades · ${formatoMoneda(pedido.totalCentimos)}")
+                    Text(pedido.numero.ifBlank { "Pedido #${pedido.id}" }, fontWeight = FontWeight.Bold)
+                    pedido.cantidadUnidadesApi?.let { Text("$it unidades · ${formatoMoneda(pedido.totalCentimos)}") }
+                        ?: Text(formatoMoneda(pedido.totalCentimos))
                     Text(pedido.estado, color = Leaf)
-                    Text("Sin envío ni seguimiento en línea", fontSize = 12.sp)
+                    pedido.fechaPedido?.let { Text("Registrado: $it", fontSize = 12.sp) }
+                    Text("Ver detalle", color = HoneyDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

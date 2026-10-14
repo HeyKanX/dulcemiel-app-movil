@@ -40,15 +40,13 @@ import com.dulcemiel.app.viewmodel.Pantalla
 internal fun PantallaDetalle(product: Producto, add: (Producto) -> Unit) {
     LazyColumn(contentPadding = PaddingValues(22.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item {
-            Box(Modifier.fillMaxWidth().height(245.dp).clip(RoundedCornerShape(30.dp)).background(Color(0xFFFFE7A3)), contentAlignment = Alignment.Center) {
-                Icon(iconoProducto(product), contentDescription = product.nombre, tint = HoneyDark, modifier = Modifier.size(120.dp))
-            }
+            ImagenProducto(product, Modifier.fillMaxWidth().height(245.dp).clip(RoundedCornerShape(30.dp)))
         }
         item {
             Text(product.etiqueta.uppercase(), color = Leaf, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Text(product.nombre, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
             Text(formatoMoneda(product.precioCentimos), fontSize = 24.sp, color = HoneyDark, fontWeight = FontWeight.Bold)
-            Text("Existencias de muestra: ${product.existencias}", color = Leaf)
+            Text("Existencias: ${product.existencias}", color = Leaf)
         }
         item { Text(product.descripcion, lineHeight = 23.sp) }
         item {
@@ -61,10 +59,10 @@ internal fun PantallaDetalle(product: Producto, add: (Producto) -> Unit) {
             }
         }
         item {
-            Button(onClick = { add(product) }, modifier = Modifier.fillMaxWidth().height(54.dp), colors = ButtonDefaults.buttonColors(containerColor = HoneyDark)) {
+            Button(onClick = { add(product) }, enabled = product.existencias > 0, modifier = Modifier.fillMaxWidth().height(54.dp), colors = ButtonDefaults.buttonColors(containerColor = HoneyDark)) {
                 Icon(Icons.Default.AddShoppingCart, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Agregar al carrito")
+                Text(if (product.existencias > 0) "Agregar al carrito" else "Producto agotado")
             }
         }
     }

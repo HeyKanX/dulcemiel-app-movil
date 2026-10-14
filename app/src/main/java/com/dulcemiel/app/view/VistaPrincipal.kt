@@ -39,21 +39,56 @@ import com.dulcemiel.app.viewmodel.Pantalla
 @Composable
 fun DulceMielApp(vm: ModeloVistaTienda) {
     val state = vm.estado
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(state.mensaje) {
+        state.mensaje?.let {
+            snackbarHostState.showSnackbar(it)
+            vm.limpiarMensaje()
+        }
+    }
     Scaffold(
         containerColor = Cream,
-        topBar = { BarraSuperior(state.pantalla) { vm.irA(Pantalla.INICIO) } },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            BarraSuperior(
+                state.pantalla,
+                state.sesionIniciada,
+                state.nombreUsuario,
+                { vm.irA(Pantalla.INICIO) },
+                vm::abrirPerfil,
+                vm::cerrarSesion
+            )
+        },
         bottomBar = {
-            if (state.pantalla != Pantalla.DETALLE) NavegacionInferior(state.pantalla, vm.cantidadCarrito(), vm::irA)
+            if (state.pantalla !in setOf(Pantalla.DETALLE, Pantalla.DETALLE_PEDIDO, Pantalla.PERFIL, Pantalla.DASHBOARD, Pantalla.ADMIN_PRODUCTOS, Pantalla.ADMIN_PEDIDOS, Pantalla.ADMIN_PROMOCIONES, Pantalla.ADMIN_USUARIOS, Pantalla.ADMIN_SITIO)) NavegacionInferior(state.pantalla, vm.cantidadCarrito(), vm::irA)
         }
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when (state.pantalla) {
-                Pantalla.INICIO -> PantallaInicio(vm.productos, vm::abrir, vm::irA)
+                Pantalla.INICIO -> PantallaInicio(
+                    vm.productos, state.nombreEmpresa, state.descripcionInicio, state.logoUrl,
+                    state.carrusel, state.promociones, state.mision, state.vision, vm::abrir, vm::irA
+                )
                 Pantalla.CATALOGO -> PantallaCatalogo(vm.productos, vm::abrir, vm::agregar)
-                Pantalla.CARRITO -> PantallaCarrito(state.lineasCarrito, state.totalCarritoCentimos, vm::agregar, vm::quitar, vm::registrarPedido)
-                Pantalla.PEDIDOS -> PantallaPedidos(state.pedidos, state.mensaje)
+                Pantalla.CARRITO -> PantallaCarrito(state.lineasCarrito, state.totalCarritoCentimos, vm::agregar, vm::quitar, vm::eliminarDelCarrito, vm::vaciarCarrito) { vm.irA(Pantalla.CHECKOUT) }
+                Pantalla.PEDIDOS -> PantallaPedidos(state.pedidos, vm::abrirPedido)
+                Pantalla.DETALLE_PEDIDO -> PantallaDetallePedido(state.detallePedido)
                 Pantalla.CONSUMO -> PantallaConsumo()
                 Pantalla.DETALLE -> state.productoSeleccionado?.let { PantallaDetalle(it, vm::agregar) }
+                Pantalla.LOGIN -> PantallaLogin(vm::login, vm::registrar)
+                Pantalla.PERFIL -> PantallaPerfil(state.nombreUsuario, state.emailUsuario, state.rolUsuario, state.rolUsuario in setOf("admin", "empleado"), vm::abrirDashboard)
+                Pantalla.DASHBOARD -> PantallaDashboard(state.resumenDashboard, vm::abrirProductosAdministrativos, vm::abrirPedidosAdministrativos, vm::abrirPromocionesAdministrativas, vm::abrirUsuariosAdministrativos, vm::abrirAdministracionSitio)
+                Pantalla.ADMIN_PRODUCTOS -> PantallaGestionProductos(state.productosAdministrativos, vm::guardarProducto, vm::eliminarProducto)
+                Pantalla.ADMIN_PEDIDOS -> PantallaGestionPedidos(state.pedidosAdministrativos, vm::abrirPedido, vm::actualizarEstadoPedido)
+                Pantalla.ADMIN_PROMOCIONES -> PantallaGestionPromociones(state.promocionesAdministrativas, vm::guardarPromocion, vm::eliminarPromocion)
+                Pantalla.ADMIN_USUARIOS -> PantallaGestionUsuarios(state.usuariosAdministrativos, state.rolUsuario == "admin", vm::crearEmpleado, vm::actualizarUsuario)
+                Pantalla.ADMIN_SITIO -> PantallaGestionSitio(state.nombreEmpresa, state.descripcionInicio, state.mision, state.vision, state.logoUrl, state.carrusel, vm::guardarConfiguracionSitio, vm::guardarCarrusel, vm::eliminarCarrusel)
+                Pantalla.CHECKOUT -> PantallaCheckout(vm::registrarPedido)
+            }
+            if (state.cargando) {
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .12f)), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = HoneyDark)
+                }
             }
         }
     }
