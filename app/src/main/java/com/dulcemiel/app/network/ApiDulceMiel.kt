@@ -74,55 +74,43 @@ data class CantidadBody(@SerializedName("producto_id") val productoId: Int, val 
 data class ActualizarCarritoBody(@SerializedName("carrito_id") val carritoId: Int, val cantidad: Int)
 data class EntregaBody(@SerializedName("contacto_nombre") val nombre: String, @SerializedName("contacto_telefono") val telefono: String, @SerializedName("contacto_email") val email: String?, @SerializedName("direccion_entrega") val direccion: String, val distrito: String, val referencia: String? = null, val notas: String? = null)
 
-interface ApiDulceMiel {
-    @GET("productos") suspend fun productos(): Respuesta<List<ProductoApi>>
-    @GET("productos/{id}") suspend fun producto(@Path("id") id: Int): Respuesta<ProductoApi>
-    @POST("auth/login") suspend fun login(@Body body: LoginBody): LoginRespuesta
-    @POST("auth/register") suspend fun registrar(@Body body: RegistroBody): Respuesta<Any>
-    @GET("auth/perfil") suspend fun perfil(): PerfilRespuesta
-    @GET("carrito") suspend fun carrito(): CarritoRespuesta
-    @POST("carrito/agregar") suspend fun agregar(@Body body: CantidadBody): Respuesta<Any>
-    @PUT("carrito/actualizar") suspend fun actualizar(@Body body: ActualizarCarritoBody): Respuesta<Any>
-    @DELETE("carrito/{id}") suspend fun quitar(@Path("id") id: Int): Respuesta<Any>
-    @DELETE("carrito") suspend fun vaciar(): Respuesta<Any>
-    @GET("pedidos") suspend fun pedidos(): PedidoRespuesta
-    @GET("pedidos/{id}") suspend fun detallePedido(@Path("id") id: Long): DetallePedidoRespuesta
-    @POST("pedidos") suspend fun crearPedido(@Body body: EntregaBody): Respuesta<Any>
-    // Administración: las pantallas de gestión consumen estos mismos contratos que la web.
-    @GET("dashboard/resumen") suspend fun resumen(): DashboardRespuesta
-    @GET("productos/admin/todos") suspend fun todosProductos(): ProductosAdminRespuesta
-    @Multipart @POST("productos") suspend fun crearProducto(@PartMap body: Map<String, @JvmSuppressWildcards okhttp3.RequestBody>, @Part imagen: okhttp3.MultipartBody.Part?): Respuesta<Any>
-    @Multipart @PUT("productos/{id}") suspend fun editarProducto(@Path("id") id: Int, @PartMap body: Map<String, @JvmSuppressWildcards okhttp3.RequestBody>, @Part imagen: okhttp3.MultipartBody.Part?): Respuesta<Any>
-    @DELETE("productos/{id}") suspend fun eliminarProducto(@Path("id") id: Int): Respuesta<Any>
-    @GET("pedidos/admin/todos") suspend fun todosPedidos(): PedidosAdminRespuesta
-    @PUT("pedidos/{id}") suspend fun actualizarPedido(@Path("id") id: Long, @Body body: EstadoPedidoBody): Respuesta<Any>
-    @GET("auth/usuarios") suspend fun usuarios(): UsuariosRespuesta
-    @POST("auth/empleados") suspend fun crearEmpleado(@Body body: EmpleadoBody): Respuesta<Any>
-    @PUT("auth/usuarios/{id}") suspend fun editarUsuario(@Path("id") id: Int, @Body body: UsuarioActualizacionBody): Respuesta<Any>
-    @GET("promociones") suspend fun promociones(): PromocionRespuesta
-    @POST("promociones") suspend fun crearPromocion(@Body body: PromocionBody): Respuesta<Any>
-    @PUT("promociones/{id}") suspend fun editarPromocion(@Path("id") id: Int, @Body body: PromocionBody): Respuesta<Any>
-    @DELETE("promociones/{id}") suspend fun eliminarPromocion(@Path("id") id: Int): Respuesta<Any>
-    @GET("sitio/inicio") suspend fun inicio(): InicioRespuesta
-    @Multipart @PUT("sitio/configuracion") suspend fun editarSitio(@PartMap body: Map<String, @JvmSuppressWildcards okhttp3.RequestBody>, @Part logo: okhttp3.MultipartBody.Part?): Respuesta<Any>
-    @Multipart @POST("sitio/carrusel") suspend fun crearCarrusel(@PartMap body: Map<String, @JvmSuppressWildcards okhttp3.RequestBody>, @Part imagen: okhttp3.MultipartBody.Part?): Respuesta<Any>
-    @Multipart @PUT("sitio/carrusel/{id}") suspend fun editarCarrusel(@Path("id") id: Int, @PartMap body: Map<String, @JvmSuppressWildcards okhttp3.RequestBody>, @Part imagen: okhttp3.MultipartBody.Part?): Respuesta<Any>
-    @DELETE("sitio/carrusel/{id}") suspend fun eliminarCarrusel(@Path("id") id: Int): Respuesta<Any>
-}
-
 class TokenInterceptor(private val token: () -> String?) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response = chain.proceed(
         chain.request().newBuilder().apply { token()?.let { header("Authorization", "Bearer $it") } }.build()
     )
 }
 
-fun crearApi(token: () -> String?): ApiDulceMiel = Retrofit.Builder().baseUrl(BASE_URL)
-    .client(
-        OkHttpClient.Builder()
-            .addInterceptor(TokenInterceptor(token))
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .callTimeout(35, TimeUnit.SECONDS)
-            .build()
+/** Servicios Retrofit separados por dominio, creados con el mismo cliente autenticado. */
+data class ServiciosDulceMiel(
+    val autenticacion: AutenticacionApiService,
+    val catalogo: CatalogoApiService,
+    val carrito: CarritoApiService,
+    val pedidos: PedidosApiService,
+    val administracion: AdministracionApiService,
+    val promociones: PromocionesApiService,
+    val sitio: SitioApiService
+)
+
+fun crearServicios(token: () -> String?): ServiciosDulceMiel {
+    val retrofit = Retrofit.Builder().baseUrl(BASE_URL)
+        .client(
+            OkHttpClient.Builder()
+                .addInterceptor(TokenInterceptor(token))
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .callTimeout(35, TimeUnit.SECONDS)
+                .build()
+        )
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    return ServiciosDulceMiel(
+        autenticacion = retrofit.create(AutenticacionApiService::class.java),
+        catalogo = retrofit.create(CatalogoApiService::class.java),
+        carrito = retrofit.create(CarritoApiService::class.java),
+        pedidos = retrofit.create(PedidosApiService::class.java),
+        administracion = retrofit.create(AdministracionApiService::class.java),
+        promociones = retrofit.create(PromocionesApiService::class.java),
+        sitio = retrofit.create(SitioApiService::class.java)
     )
-    .addConverterFactory(GsonConverterFactory.create()).build().create(ApiDulceMiel::class.java)
+}

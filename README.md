@@ -59,6 +59,10 @@ El APK de prueba se genera localmente en `app/build/outputs/apk/debug/` y no se 
 
 La URL base se encuentra en `app/build.gradle.kts`, dentro de `API_BASE_URL`. Por defecto apunta a la API desplegada indicada arriba. Si se despliega una nueva API, cambie únicamente ese valor y vuelva a compilar.
 
+## Arquitectura de red
+
+La app usa MVVM y Retrofit. `crearServicios` construye un único cliente HTTP autenticado y crea interfaces por dominio: `AutenticacionApiService`, `CatalogoApiService`, `CarritoApiService`, `PedidosApiService`, `AdministracionApiService`, `PromocionesApiService` y `SitioApiService`. `RepositorioTienda` consume esas interfaces y las pantallas se comunican con él por medio de `ModeloVistaTienda`.
+
 ## Contenido del repositorio
 
 Se incluyen el código fuente, recursos, Gradle Wrapper y la configuración mínima para compilar. No se incluyen dependencias descargadas, cachés de Gradle/Kotlin, configuraciones locales de Android Studio, archivos del SDK ni APK/AAB generados.
