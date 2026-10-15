@@ -13,6 +13,14 @@ class Sesion(context: Context) {
     private val prefs = context.getSharedPreferences("sesion", Context.MODE_PRIVATE)
     private val clave by lazy { obtenerClave() }
 
+    init {
+        val campos = listOf("token", "nombre", "email", "rol")
+        if (campos.any(prefs::contains) && campos.any { campo -> prefs.getString(campo, null)?.let(::descifrar) == null }) {
+            // Las instalaciones anteriores guardaban la sesión sin cifrar: se fuerza un nuevo inicio seguro.
+            prefs.edit().clear().apply()
+        }
+    }
+
     var token: String? get() = leer("token"); set(value) { guardar("token", value) }
     var nombre: String? get() = leer("nombre"); private set(value) { guardar("nombre", value) }
     var email: String? get() = leer("email"); private set(value) { guardar("email", value) }
