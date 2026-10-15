@@ -63,6 +63,8 @@ La URL base se encuentra en `app/build.gradle.kts`, dentro de `API_BASE_URL`. Po
 
 La app usa MVVM y Retrofit. `crearServicios` construye un único cliente HTTP autenticado y crea interfaces por dominio: `AutenticacionApiService`, `CatalogoApiService`, `CarritoApiService`, `PedidosApiService`, `AdministracionApiService`, `PromocionesApiService` y `SitioApiService`. `RepositorioTienda` consume esas interfaces y las pantallas se comunican con él por medio de `ModeloVistaTienda`.
 
+La sesión se guarda cifrada con una clave del Android Keystore y la aplicación no permite respaldos automáticos de sus datos. La app detecta ausencia de Internet antes de ejecutar operaciones remotas y muestra mensajes diferenciados para validaciones, permisos, recursos no encontrados, fallos de servidor y credenciales inválidas.
+
 ## Contenido del repositorio
 
 Se incluyen el código fuente, recursos, Gradle Wrapper y la configuración mínima para compilar. No se incluyen dependencias descargadas, cachés de Gradle/Kotlin, configuraciones locales de Android Studio, archivos del SDK ni APK/AAB generados.

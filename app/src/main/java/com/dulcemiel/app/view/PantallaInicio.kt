@@ -94,6 +94,7 @@ internal fun PantallaInicio(
                         Column(Modifier.weight(1f)) {
                             Text("${promocion.descuento}% OFF · ${promocion.titulo}", fontWeight = FontWeight.Bold, color = Color(0xFF1B5E20))
                             promocion.descripcion?.let { Text(it, fontSize = 13.sp) }
+                            textoVigencia(promocion)?.let { Text(it, fontSize = 12.sp, color = Color(0xFF356B39)) }
                         }
                     }
                 }
@@ -133,4 +134,11 @@ internal fun PantallaInicio(
             }
         }
     }
+}
+
+private fun textoVigencia(promocion: Promocion): String? = when {
+    promocion.fechaInicio.isNotBlank() && !promocion.fechaFin.isNullOrBlank() -> "Válida del ${promocion.fechaInicio} al ${promocion.fechaFin}"
+    promocion.fechaInicio.isNotBlank() -> "Válida desde ${promocion.fechaInicio}"
+    !promocion.fechaFin.isNullOrBlank() -> "Válida hasta ${promocion.fechaFin}"
+    else -> null
 }

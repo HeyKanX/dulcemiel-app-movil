@@ -6,11 +6,21 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dulcemiel.app.model.Producto
 import com.dulcemiel.app.network.EntregaBody
+import com.dulcemiel.app.network.NetworkConnectivityHelper
 import com.dulcemiel.app.repository.RepositorioTienda
+import com.google.gson.JsonParser
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import retrofit2.HttpException
 
-class ModeloVistaTienda(private val repo: RepositorioTienda) : ViewModel() {
+class ModeloVistaTienda(
+    private val repo: RepositorioTienda,
+    private val conectividad: NetworkConnectivityHelper
+) : ViewModel() {
     var productos by mutableStateOf<List<Producto>>(emptyList()); private set
     var estado by mutableStateOf(EstadoAplicacion(
         sesionIniciada = repo.autenticado(),
@@ -23,7 +33,7 @@ class ModeloVistaTienda(private val repo: RepositorioTienda) : ViewModel() {
         estado=estado.copy(
             nombreEmpresa=inicio.nombreEmpresa, descripcionInicio=inicio.descripcion,
             mision=inicio.mision, vision=inicio.vision, logoUrl=inicio.logoUrl,
-            carrusel=inicio.carrusel, promociones=inicio.promociones
+            carrusel=inicio.carrusel, promociones=inicio.promociones.filter { it.estaVigente() }
         )
     }
     fun irA(p: Pantalla) {
@@ -122,7 +132,7 @@ class ModeloVistaTienda(private val repo: RepositorioTienda) : ViewModel() {
             estado=estado.copy(nombreUsuario=usuario.nombre,emailUsuario=usuario.email,rolUsuario=usuario.rol,sesionIniciada=true)
         }
     }
-    fun login(e:String,p:String) = ejecutar {
+    fun login(e:String,p:String) = ejecutar(cerrarSesionAlRecibir401 = false) {
         val mensaje=repo.login(e,p)
         if(repo.autenticado()) {
             refrescarPrivado()
@@ -167,7 +177,7 @@ class ModeloVistaTienda(private val repo: RepositorioTienda) : ViewModel() {
     fun cantidadCarrito()=estado.carrito.values.sum()
     private fun refrescarPrivado(){ cargarCarrito(); ejecutar{ estado=estado.copy(pedidos=repo.pedidos()) } }
     private fun cargarCarrito()=ejecutar{
-        val(c,m)=repo.carrito()
+        val (c, m, totalServidor) = repo.carrito()
         val lineas = c.map { productoCarrito ->
             val productoCatalogo = productos.firstOrNull { it.id == productoCarrito.id }
             val producto = productoCatalogo?.let {
@@ -175,19 +185,49 @@ class ModeloVistaTienda(private val repo: RepositorioTienda) : ViewModel() {
             } ?: productoCarrito
             LineaCarrito(producto, m[producto.id] ?: 0)
         }
-        estado=estado.copy(carrito=m,lineasCarrito=lineas,totalCarritoCentimos=lineas.sumOf{it.producto.precioCentimos*it.cantidad})
+        estado=estado.copy(carrito=m,lineasCarrito=lineas,totalCarritoCentimos=totalServidor)
     }
-    private fun ejecutar(b:suspend()->Unit)=viewModelScope.launch{
+    private fun ejecutar(cerrarSesionAlRecibir401: Boolean = true, b:suspend()->Unit)=viewModelScope.launch{
+        if (!conectividad.hayConexionInternet()) {
+            estado = estado.copy(cargando=false, mensaje="Sin conexión a Internet. Revisa tu red e inténtalo nuevamente.")
+            return@launch
+        }
         estado=estado.copy(cargando=true)
         try { b() }
         catch(e: HttpException) {
-            if (e.code() == 401) {
+            if (e.code() == 401 && cerrarSesionAlRecibir401) {
                 repo.cerrarSesion()
                 estado=estado.copy(sesionIniciada=false,nombreUsuario=null,emailUsuario=null,rolUsuario=null,pantalla=Pantalla.LOGIN,mensaje="Tu sesión venció. Ingresa nuevamente.")
-            } else estado=estado.copy(mensaje="No se pudo completar la acción. Inténtalo nuevamente.")
+            } else estado=estado.copy(mensaje=mensajeHttp(e, cerrarSesionAlRecibir401))
         }
-        catch(e: Exception) { estado=estado.copy(mensaje="No se pudo conectar con Dulce Miel. Revisa tu conexión e inténtalo nuevamente.") }
+        catch(e: SocketTimeoutException) { estado=estado.copy(mensaje="Dulce Miel tardó demasiado en responder. Inténtalo nuevamente.") }
+        catch(e: UnknownHostException) { estado=estado.copy(mensaje="No se pudo encontrar el servidor. Revisa tu conexión a Internet.") }
+        catch(e: IOException) { estado=estado.copy(mensaje="No se pudo conectar con Dulce Miel. Revisa tu conexión e inténtalo nuevamente.") }
+        catch(e: Exception) { estado=estado.copy(mensaje="No se pudo completar la acción. Inténtalo nuevamente.") }
         finally { estado=estado.copy(cargando=false) }
     }
+    private fun mensajeHttp(error: HttpException, cerrarSesionAlRecibir401: Boolean): String {
+        val mensajeApi = runCatching {
+            error.response()?.errorBody()?.string()?.let { cuerpo ->
+                JsonParser.parseString(cuerpo).asJsonObject.get("message")?.asString
+            }
+        }.getOrNull()?.takeIf { it.isNotBlank() }
+        val predeterminado = when (error.code()) {
+            400 -> "Los datos enviados no son válidos."
+            401 -> if (cerrarSesionAlRecibir401) "Tu sesión venció. Ingresa nuevamente." else "Correo o contraseña incorrectos."
+            403 -> "No tienes permisos para realizar esta acción."
+            404 -> "No se encontró el recurso solicitado."
+            in 500..599 -> "El servidor presentó un problema. Inténtalo más tarde."
+            else -> "No se pudo completar la acción."
+        }
+        return mensajeApi ?: "$predeterminado (HTTP ${error.code()})"
+    }
+    private fun com.dulcemiel.app.model.Promocion.estaVigente(hoy: LocalDate = LocalDate.now()): Boolean {
+        fun fecha(valor: String?): LocalDate? = valor?.take(10)?.let { runCatching { LocalDate.parse(it, DateTimeFormatter.ISO_LOCAL_DATE) }.getOrNull() }
+        return activa && (fecha(fechaInicio)?.let { !it.isAfter(hoy) } ?: true) && (fecha(fechaFin)?.let { !it.isBefore(hoy) } ?: true)
+    }
 }
-class FabricaModeloVistaTienda(private val r:RepositorioTienda):ViewModelProvider.Factory{ @Suppress("UNCHECKED_CAST") override fun<T:ViewModel> create(modelClass:Class<T>):T=ModeloVistaTienda(r) as T }
+class FabricaModeloVistaTienda(
+    private val repositorio: RepositorioTienda,
+    private val conectividad: NetworkConnectivityHelper
+):ViewModelProvider.Factory{ @Suppress("UNCHECKED_CAST") override fun<T:ViewModel> create(modelClass:Class<T>):T=ModeloVistaTienda(repositorio, conectividad) as T }

@@ -21,6 +21,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import com.dulcemiel.app.network.*
+import java.math.RoundingMode
 
 class RepositorioTienda(private val servicios: ServiciosDulceMiel, private val sesion: Sesion) {
     suspend fun productos(): List<Producto> = servicios.catalogo.productos().data.orEmpty().map { it.aProducto() }
@@ -83,7 +84,18 @@ class RepositorioTienda(private val servicios: ServiciosDulceMiel, private val s
         return carrusel.id?.let { servicios.sitio.editarCarrusel(it, campos, imagen).message } ?: servicios.sitio.crearCarrusel(campos, imagen).message
     }
     suspend fun eliminarCarrusel(id: Int): String? = servicios.sitio.eliminarCarrusel(id).message
-    suspend fun carrito(): Pair<List<Producto>, Map<Int, Int>> = servicios.carrito.carrito().let { r -> r.data.map { Producto(it.productoId, it.nombre, "", (it.precio * 100).toInt(), it.stock ?: Int.MAX_VALUE, "", it.id) } to r.data.associate { it.productoId to it.cantidad } }
+    suspend fun carrito(): Triple<List<Producto>, Map<Int, Int>, Int> = servicios.carrito.carrito().let { respuesta ->
+        val productos = respuesta.data.map {
+            Producto(it.productoId, it.nombre, "", (it.precio * 100).toInt(), it.stock ?: Int.MAX_VALUE, "", it.id)
+        }
+        val cantidades = respuesta.data.associate { it.productoId to it.cantidad }
+        val totalCentimos = respuesta.total.toBigDecimalOrNull()
+            ?.movePointRight(2)
+            ?.setScale(0, RoundingMode.HALF_UP)
+            ?.toInt()
+            ?: productos.sumOf { producto -> producto.precioCentimos * (cantidades[producto.id] ?: 0) }
+        Triple(productos, cantidades, totalCentimos)
+    }
     suspend fun agregar(id: Int) = servicios.carrito.agregar(CantidadBody(id, 1)).message
     suspend fun actualizar(carritoId: Int, cantidad: Int) = if (cantidad <= 0) servicios.carrito.quitar(carritoId).message else servicios.carrito.actualizar(ActualizarCarritoBody(carritoId, cantidad)).message
     suspend fun quitar(carritoId: Int) = servicios.carrito.quitar(carritoId).message
@@ -105,7 +117,7 @@ class RepositorioTienda(private val servicios: ServiciosDulceMiel, private val s
             config?.descripcion ?: "Conoce nuestros productos naturales.",
             config?.mision.orEmpty(), config?.vision.orEmpty(), config?.logoUrl,
             respuesta.carrusel.map { SlideInicio(it.id, it.titulo, it.descripcion, it.imagenUrl, it.orden, it.activo) },
-            respuesta.promociones.map { Promocion(it.id, it.titulo, it.descripcion, it.descuento) }
+            respuesta.promociones.map { Promocion(it.id, it.titulo, it.descripcion, it.descuento, it.fechaInicio, it.fechaFin, it.activo) }
         )
     }
     private fun ProductoApi.aProducto() = Producto(id, nombre, descripcion.orEmpty(), (precio * 100).toInt(), stock, categoria.orEmpty(), imagenUrl = imagenUrl, estado = estado)
