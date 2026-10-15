@@ -64,7 +64,7 @@ La URL base está configurada en `app/build.gradle.kts`, dentro de `API_BASE_URL
 http://10.0.2.2:5000/api/
 ```
 
-Desde la terminal de VS Code, inicia el backend en Windows:
+El código del backend y las instrucciones para configurar SQL Server local están en [`backend/README.md`](backend/README.md). Desde la terminal de VS Code, en Windows, puedes iniciarlo así:
 
 ```powershell
 cd backend
