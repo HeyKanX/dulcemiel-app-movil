@@ -15,7 +15,8 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
-        buildConfigField("String", "API_BASE_URL", "\"https://api-webdulcemiel-2026-cna2g8h7fmb6g3gu.brazilsouth-01.azurewebsites.net/api/\"")
+        // El emulador Android alcanza el host Windows del backend por 10.0.2.2.
+        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5000/api/\"")
     }
 
     buildFeatures {

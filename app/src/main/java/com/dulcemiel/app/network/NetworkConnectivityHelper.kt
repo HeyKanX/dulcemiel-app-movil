@@ -12,7 +12,8 @@ class NetworkConnectivityHelper(context: Context) {
     fun hayConexionInternet(): Boolean {
         val red = connectivityManager.activeNetwork ?: return false
         val capacidades = connectivityManager.getNetworkCapabilities(red) ?: return false
-        return capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-            capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        // NET_CAPABILITY_VALIDATED exige acceso a Internet público y puede descartar
+        // una conexión útil con el backend local del PC.
+        return capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 }

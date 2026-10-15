@@ -1,11 +1,11 @@
 # Dulce Miel Mobile
 
-Aplicación Android nativa en Kotlin y Jetpack Compose para Dulce Miel. Está adaptada a la API REST desplegada: no requiere una base de datos ni backend local.
+Aplicación Android nativa en Kotlin y Jetpack Compose para Dulce Miel. Consume el backend Spring Boot ejecutado localmente desde VS Code.
 
 ## Enlaces
 
 - Repositorio: https://github.com/HeyKanX/dulcemiel-app-movil
-- API desplegada: https://api-webdulcemiel-2026-cna2g8h7fmb6g3gu.brazilsouth-01.azurewebsites.net/api/
+- API local (desde el emulador Android Studio): `http://10.0.2.2:5000/api/`
 
 ## Funcionalidades
 
@@ -22,7 +22,7 @@ Aplicación Android nativa en Kotlin y Jetpack Compose para Dulce Miel. Está ad
 - Android Studio actualizado con Android SDK Platform 37.
 - JDK administrado por Android Studio.
 - Un emulador o dispositivo con Android 8.0 (API 26) o superior.
-- Internet para la primera sincronización de Gradle y para usar la API.
+- Internet para la primera sincronización de Gradle y acceso a la base de datos configurada para el backend.
 
 El proyecto declara `minSdk 26`, `targetSdk 36` y `compileSdk 37`.
 
@@ -35,7 +35,8 @@ cd dulcemiel-app-movil
 
 1. Abra la carpeta clonada en Android Studio.
 2. Espere la sincronización de Gradle. Android Studio descarga automáticamente las dependencias necesarias en el equipo local.
-3. Elija un emulador o teléfono y ejecute el módulo `app`.
+3. Inicie el backend siguiendo los pasos de abajo.
+4. Elija un emulador y ejecute el módulo `app`.
 
 No se versiona `local.properties`: Android Studio lo crea con la ruta del SDK de cada equipo.
 
@@ -57,7 +58,22 @@ El APK de prueba se genera localmente en `app/build/outputs/apk/debug/` y no se 
 
 ## API configurada
 
-La URL base se encuentra en `app/build.gradle.kts`, dentro de `API_BASE_URL`. Por defecto apunta a la API desplegada indicada arriba. Si se despliega una nueva API, cambie únicamente ese valor y vuelva a compilar.
+La URL base está configurada en `app/build.gradle.kts`, dentro de `API_BASE_URL`, y apunta al backend local:
+
+```text
+http://10.0.2.2:5000/api/
+```
+
+Desde la terminal de VS Code, inicia el backend en Windows:
+
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+Déjalo ejecutándose y verifica `http://localhost:5000/api/health` en el navegador del PC. Luego ejecuta la app en el emulador Android Studio. La dirección `10.0.2.2` conecta el emulador con el PC; no uses `localhost` en la app. Para un teléfono físico conectado a la misma Wi-Fi, reemplaza `10.0.2.2` por la IP local del PC y permite el puerto 5000 en el firewall.
+
+El backend necesita que sus variables de entorno y acceso a base de datos estén configurados localmente. La app permite HTTP para esta conexión local.
 
 ## Arquitectura de red
 
