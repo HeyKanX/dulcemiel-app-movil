@@ -36,6 +36,7 @@ import com.dulcemiel.app.ui.theme.Hoja as Leaf
 import com.dulcemiel.app.ui.theme.Tinta as Ink
 import com.dulcemiel.app.viewmodel.ModeloVistaTienda
 import com.dulcemiel.app.viewmodel.Pantalla
+import com.dulcemiel.app.viewmodel.EstadoRecurso
 import coil3.compose.AsyncImage
 
 @Composable
@@ -43,6 +44,42 @@ internal fun TituloSeccion(title: String, subtitle: String) {
     Column {
         Text(title, fontWeight = FontWeight.Bold, fontSize = 21.sp)
         Text(subtitle, fontSize = 13.sp, color = Color(0xFF766B5E))
+    }
+}
+
+@Composable
+internal fun ContenidoConEstado(
+    estado: EstadoRecurso,
+    mensajeVacio: String,
+    reintentar: () -> Unit,
+    mostrarContenidoSinDatos: Boolean = false,
+    contenido: @Composable () -> Unit
+) {
+    when (estado) {
+        EstadoRecurso.Inicial, EstadoRecurso.Cargando -> Box(
+            Modifier.fillMaxSize().padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = HoneyDark)
+        }
+        EstadoRecurso.Vacio -> if (mostrarContenidoSinDatos) {
+            Column(Modifier.fillMaxSize()) {
+                Text(mensajeVacio, Modifier.align(Alignment.CenterHorizontally).padding(16.dp), color = Color(0xFF766B5E))
+                Box(Modifier.weight(1f).fillMaxWidth()) { contenido() }
+            }
+        } else Box(
+            Modifier.fillMaxSize().padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) { Text(mensajeVacio, color = Color(0xFF766B5E)) }
+        is EstadoRecurso.Error -> Column(
+            Modifier.fillMaxSize().padding(32.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(estado.mensaje, color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = reintentar) { Text("Reintentar") }
+        }
+        EstadoRecurso.Contenido -> contenido()
     }
 }
 

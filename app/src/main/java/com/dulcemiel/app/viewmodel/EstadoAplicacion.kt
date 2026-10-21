@@ -9,6 +9,37 @@ import com.dulcemiel.app.model.ResumenDashboard
 import com.dulcemiel.app.model.PedidoAdministrativo
 import com.dulcemiel.app.model.UsuarioAdministrativo
 
+enum class RecursoUi {
+    INICIO,
+    CATALOGO,
+    DETALLE_PRODUCTO,
+    PERFIL,
+    CARRITO,
+    PEDIDOS,
+    DETALLE_PEDIDO,
+    DASHBOARD,
+    ADMIN_PRODUCTOS,
+    ADMIN_PEDIDOS,
+    ADMIN_PROMOCIONES,
+    ADMIN_USUARIOS
+}
+
+sealed interface EstadoRecurso {
+    data object Inicial : EstadoRecurso
+    data object Cargando : EstadoRecurso
+    data object Contenido : EstadoRecurso
+    data object Vacio : EstadoRecurso
+    data class Error(val mensaje: String, val sinConexion: Boolean = false) : EstadoRecurso
+}
+
+fun EstadoRecurso.iniciarCarga(): EstadoRecurso = EstadoRecurso.Cargando
+
+fun EstadoRecurso.completarCarga(tieneDatos: Boolean): EstadoRecurso =
+    if (tieneDatos) EstadoRecurso.Contenido else EstadoRecurso.Vacio
+
+fun EstadoRecurso.fallarCarga(mensaje: String, sinConexion: Boolean = false): EstadoRecurso =
+    EstadoRecurso.Error(mensaje, sinConexion)
+
 data class EstadoAplicacion(
     val pantalla: Pantalla = Pantalla.INICIO,
     val productoSeleccionado: Producto? = null,
@@ -34,6 +65,9 @@ data class EstadoAplicacion(
     val pedidosAdministrativos: List<PedidoAdministrativo> = emptyList(),
     val promocionesAdministrativas: List<Promocion> = emptyList(),
     val usuariosAdministrativos: List<UsuarioAdministrativo> = emptyList(),
-    val cargando: Boolean = false,
+    val operacionesActivas: Int = 0,
+    val estadosRecursos: Map<RecursoUi, EstadoRecurso> = emptyMap(),
     val mensaje: String? = null
-)
+) {
+    val cargando: Boolean get() = operacionesActivas > 0
+}
