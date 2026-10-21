@@ -27,7 +27,10 @@ class ModeloVistaTienda(
         nombreUsuario = repo.nombreUsuario(), emailUsuario = repo.emailUsuario(), rolUsuario = repo.rolUsuario()
     )); private set
     init { cargarProductos(); cargarInicio(); if (repo.autenticado()) { cargarPerfil(); refrescarPrivado() } }
-    fun cargarProductos() = ejecutar { productos = repo.productos() }
+    fun cargarProductos() = ejecutar {
+        productos = repo.productos()
+        estado = estado.copy(catalogoCargado = true)
+    }
     private fun cargarInicio() = ejecutar {
         val inicio = repo.inicio()
         estado=estado.copy(
@@ -198,7 +201,7 @@ class ModeloVistaTienda(
             if (e.code() == 401 && cerrarSesionAlRecibir401) {
                 repo.cerrarSesion()
                 estado=estado.copy(sesionIniciada=false,nombreUsuario=null,emailUsuario=null,rolUsuario=null,pantalla=Pantalla.LOGIN,mensaje="Tu sesión venció. Ingresa nuevamente.")
-            } else estado=estado.copy(mensaje=mensajeHttp(e, cerrarSesionAlRecibir401))
+            } else estado=estado.copy(mensaje=mensajeHttpParaUsuario(e, cerrarSesionAlRecibir401))
         }
         catch(e: SocketTimeoutException) { estado=estado.copy(mensaje="Dulce Miel tardó demasiado en responder. Inténtalo nuevamente.") }
         catch(e: UnknownHostException) { estado=estado.copy(mensaje="No se pudo encontrar el servidor. Revisa tu conexión a Internet.") }
@@ -206,27 +209,29 @@ class ModeloVistaTienda(
         catch(e: Exception) { estado=estado.copy(mensaje="No se pudo completar la acción. Inténtalo nuevamente.") }
         finally { estado=estado.copy(cargando=false) }
     }
-    private fun mensajeHttp(error: HttpException, cerrarSesionAlRecibir401: Boolean): String {
-        val mensajeApi = runCatching {
-            error.response()?.errorBody()?.string()?.let { cuerpo ->
-                JsonParser.parseString(cuerpo).asJsonObject.get("message")?.asString
-            }
-        }.getOrNull()?.takeIf { it.isNotBlank() }
-        val predeterminado = when (error.code()) {
-            400 -> "Los datos enviados no son válidos."
-            401 -> if (cerrarSesionAlRecibir401) "Tu sesión venció. Ingresa nuevamente." else "Correo o contraseña incorrectos."
-            403 -> "No tienes permisos para realizar esta acción."
-            404 -> "No se encontró el recurso solicitado."
-            in 500..599 -> "El servidor presentó un problema. Inténtalo más tarde."
-            else -> "No se pudo completar la acción."
-        }
-        return mensajeApi ?: "$predeterminado (HTTP ${error.code()})"
-    }
     private fun com.dulcemiel.app.model.Promocion.estaVigente(hoy: LocalDate = LocalDate.now()): Boolean {
         fun fecha(valor: String?): LocalDate? = valor?.take(10)?.let { runCatching { LocalDate.parse(it, DateTimeFormatter.ISO_LOCAL_DATE) }.getOrNull() }
         return activa && (fecha(fechaInicio)?.let { !it.isAfter(hoy) } ?: true) && (fecha(fechaFin)?.let { !it.isBefore(hoy) } ?: true)
     }
 }
+
+internal fun mensajeHttpParaUsuario(error: HttpException, cerrarSesionAlRecibir401: Boolean): String {
+    val mensajeApi = runCatching {
+        error.response()?.errorBody()?.string()?.let { cuerpo ->
+            JsonParser.parseString(cuerpo).asJsonObject.get("message")?.asString
+        }
+    }.getOrNull()?.takeIf { it.isNotBlank() }
+    val predeterminado = when (error.code()) {
+        400 -> "Los datos enviados no son válidos."
+        401 -> if (cerrarSesionAlRecibir401) "Tu sesión venció. Ingresa nuevamente." else "Correo o contraseña incorrectos."
+        403 -> "No tienes permisos para realizar esta acción."
+        404 -> "No se encontró el recurso solicitado."
+        in 500..599 -> "El servidor presentó un problema. Inténtalo más tarde."
+        else -> "No se pudo completar la acción."
+    }
+    return mensajeApi ?: "$predeterminado (HTTP ${error.code()})"
+}
+
 class FabricaModeloVistaTienda(
     private val repositorio: RepositorioTienda,
     private val conectividad: NetworkConnectivityHelper

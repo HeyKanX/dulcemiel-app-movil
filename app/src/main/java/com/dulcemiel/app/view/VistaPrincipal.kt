@@ -69,7 +69,14 @@ fun DulceMielApp(vm: ModeloVistaTienda) {
                     vm.productos, state.nombreEmpresa, state.descripcionInicio, state.logoUrl,
                     state.carrusel, state.promociones, state.mision, state.vision, vm::abrir, vm::irA
                 )
-                Pantalla.CATALOGO -> PantallaCatalogo(vm.productos, vm::abrir, vm::agregar)
+                Pantalla.CATALOGO -> PantallaCatalogo(
+                    vm.productos,
+                    state.catalogoCargado,
+                    state.cargando,
+                    vm::abrir,
+                    vm::agregar,
+                    vm::cargarProductos
+                )
                 Pantalla.CARRITO -> PantallaCarrito(state.lineasCarrito, state.totalCarritoCentimos, vm::agregar, vm::quitar, vm::eliminarDelCarrito, vm::vaciarCarrito) { vm.irA(Pantalla.CHECKOUT) }
                 Pantalla.PEDIDOS -> PantallaPedidos(state.pedidos, vm::abrirPedido)
                 Pantalla.DETALLE_PEDIDO -> PantallaDetallePedido(state.detallePedido)
