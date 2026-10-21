@@ -37,9 +37,38 @@ import com.dulcemiel.app.viewmodel.ModeloVistaTienda
 import com.dulcemiel.app.viewmodel.Pantalla
 
 @Composable
-internal fun PantallaCatalogo(products: List<Producto>, open: (Producto) -> Unit, add: (Producto) -> Unit) {
+internal fun PantallaCatalogo(
+    products: List<Producto>,
+    catalogoCargado: Boolean,
+    cargando: Boolean,
+    open: (Producto) -> Unit,
+    add: (Producto) -> Unit,
+    recargar: () -> Unit
+) {
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { TituloSeccion("Elige de manera informada", "Precios y existencias actualizados") }
+        if (products.isEmpty()) {
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        when {
+                            cargando -> "Cargando catálogo…"
+                            catalogoCargado -> "Aún no hay productos disponibles."
+                            else -> "No se pudo cargar el catálogo. Revisa tu conexión."
+                        },
+                        color = Ink,
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (!cargando && !catalogoCargado) {
+                        OutlinedButton(onClick = recargar) { Text("Reintentar") }
+                    }
+                }
+            }
+        }
         items(products) { product ->
             Card(Modifier.fillMaxWidth().clickable { open(product) }, colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(18.dp)) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -18,6 +18,7 @@ data class EstadoAplicacion(
     val pedidos: List<Pedido> = emptyList(),
     val detallePedido: DetallePedido? = null,
     val nombreEmpresa: String = "Dulce Miel",
+    val catalogoCargado: Boolean = false,
     val descripcionInicio: String = "Conoce nuestros productos naturales.",
     val mision: String = "",
     val vision: String = "",
