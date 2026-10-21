@@ -35,6 +35,8 @@ import com.dulcemiel.app.ui.theme.Hoja as Leaf
 import com.dulcemiel.app.ui.theme.Tinta as Ink
 import com.dulcemiel.app.viewmodel.ModeloVistaTienda
 import com.dulcemiel.app.viewmodel.Pantalla
+import com.dulcemiel.app.viewmodel.RecursoUi
+import com.dulcemiel.app.viewmodel.EstadoRecurso
 
 @Composable
 fun DulceMielApp(vm: ModeloVistaTienda) {
@@ -65,31 +67,57 @@ fun DulceMielApp(vm: ModeloVistaTienda) {
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when (state.pantalla) {
-                Pantalla.INICIO -> PantallaInicio(
-                    vm.productos, state.nombreEmpresa, state.descripcionInicio, state.logoUrl,
-                    state.carrusel, state.promociones, state.mision, state.vision, vm::abrir, vm::irA
-                )
-                Pantalla.CATALOGO -> PantallaCatalogo(
-                    vm.productos,
-                    state.catalogoCargado,
-                    state.cargando,
-                    vm::abrir,
-                    vm::agregar,
-                    vm::cargarProductos
-                )
-                Pantalla.CARRITO -> PantallaCarrito(state.lineasCarrito, state.totalCarritoCentimos, vm::agregar, vm::quitar, vm::eliminarDelCarrito, vm::vaciarCarrito) { vm.irA(Pantalla.CHECKOUT) }
-                Pantalla.PEDIDOS -> PantallaPedidos(state.pedidos, vm::abrirPedido)
-                Pantalla.DETALLE_PEDIDO -> PantallaDetallePedido(state.detallePedido)
+                Pantalla.INICIO -> ContenidoConEstado(state.estado(RecursoUi.INICIO), "No se pudo cargar el inicio.", { vm.reintentar(RecursoUi.INICIO) }) {
+                    PantallaInicio(
+                        vm.productos, state.nombreEmpresa, state.descripcionInicio, state.logoUrl,
+                        state.carrusel, state.promociones, state.mision, state.vision, vm::abrir, vm::irA
+                    )
+                }
+                Pantalla.CATALOGO -> ContenidoConEstado(state.estado(RecursoUi.CATALOGO), "No hay productos disponibles.", { vm.reintentar(RecursoUi.CATALOGO) }) {
+                    PantallaCatalogo(
+                        vm.productos,
+                        state.catalogoCargado,
+                        state.cargando,
+                        vm::abrir,
+                        vm::agregar,
+                        vm::cargarProductos
+                    )
+                }
+                Pantalla.CARRITO -> ContenidoConEstado(state.estado(RecursoUi.CARRITO), "Tu carrito está vacío.", { vm.reintentar(RecursoUi.CARRITO) }) {
+                    PantallaCarrito(state.lineasCarrito, state.totalCarritoCentimos, vm::agregar, vm::quitar, vm::eliminarDelCarrito, vm::vaciarCarrito) { vm.irA(Pantalla.CHECKOUT) }
+                }
+                Pantalla.PEDIDOS -> ContenidoConEstado(state.estado(RecursoUi.PEDIDOS), "Aún no tienes pedidos registrados.", { vm.reintentar(RecursoUi.PEDIDOS) }) {
+                    PantallaPedidos(state.pedidos, vm::abrirPedido)
+                }
+                Pantalla.DETALLE_PEDIDO -> ContenidoConEstado(state.estado(RecursoUi.DETALLE_PEDIDO), "El pedido no contiene información para mostrar.", { vm.reintentar(RecursoUi.DETALLE_PEDIDO) }) {
+                    PantallaDetallePedido(state.detallePedido)
+                }
                 Pantalla.CONSUMO -> PantallaConsumo()
-                Pantalla.DETALLE -> state.productoSeleccionado?.let { PantallaDetalle(it, vm::agregar) }
+                Pantalla.DETALLE -> ContenidoConEstado(state.estado(RecursoUi.DETALLE_PRODUCTO), "No se pudo cargar el producto.", { vm.reintentar(RecursoUi.DETALLE_PRODUCTO) }) {
+                    state.productoSeleccionado?.let { PantallaDetalle(it, vm::agregar) }
+                }
                 Pantalla.LOGIN -> PantallaLogin(vm::login, vm::registrar)
-                Pantalla.PERFIL -> PantallaPerfil(state.nombreUsuario, state.emailUsuario, state.rolUsuario, state.rolUsuario in setOf("admin", "empleado"), vm::abrirDashboard)
-                Pantalla.DASHBOARD -> PantallaDashboard(state.resumenDashboard, vm::abrirProductosAdministrativos, vm::abrirPedidosAdministrativos, vm::abrirPromocionesAdministrativas, vm::abrirUsuariosAdministrativos, vm::abrirAdministracionSitio)
-                Pantalla.ADMIN_PRODUCTOS -> PantallaGestionProductos(state.productosAdministrativos, vm::guardarProducto, vm::eliminarProducto)
-                Pantalla.ADMIN_PEDIDOS -> PantallaGestionPedidos(state.pedidosAdministrativos, vm::abrirPedido, vm::actualizarEstadoPedido)
-                Pantalla.ADMIN_PROMOCIONES -> PantallaGestionPromociones(state.promocionesAdministrativas, vm::guardarPromocion, vm::eliminarPromocion)
-                Pantalla.ADMIN_USUARIOS -> PantallaGestionUsuarios(state.usuariosAdministrativos, state.rolUsuario == "admin", vm::crearEmpleado, vm::actualizarUsuario)
-                Pantalla.ADMIN_SITIO -> PantallaGestionSitio(state.nombreEmpresa, state.descripcionInicio, state.mision, state.vision, state.logoUrl, state.carrusel, vm::guardarConfiguracionSitio, vm::guardarCarrusel, vm::eliminarCarrusel)
+                Pantalla.PERFIL -> ContenidoConEstado(state.estado(RecursoUi.PERFIL), "No se pudo cargar tu perfil.", { vm.reintentar(RecursoUi.PERFIL) }) {
+                    PantallaPerfil(state.nombreUsuario, state.emailUsuario, state.rolUsuario, state.rolUsuario in setOf("admin", "empleado"), vm::abrirDashboard)
+                }
+                Pantalla.DASHBOARD -> ContenidoConEstado(state.estado(RecursoUi.DASHBOARD), "No hay actividad para resumir todavía.", { vm.reintentar(RecursoUi.DASHBOARD) }) {
+                    PantallaDashboard(state.resumenDashboard, vm::abrirProductosAdministrativos, vm::abrirPedidosAdministrativos, vm::abrirPromocionesAdministrativas, vm::abrirUsuariosAdministrativos, vm::abrirAdministracionSitio)
+                }
+                Pantalla.ADMIN_PRODUCTOS -> ContenidoConEstado(state.estado(RecursoUi.ADMIN_PRODUCTOS), "No hay productos registrados.", { vm.reintentar(RecursoUi.ADMIN_PRODUCTOS) }, mostrarContenidoSinDatos = true) {
+                    PantallaGestionProductos(state.productosAdministrativos, vm::guardarProducto, vm::eliminarProducto)
+                }
+                Pantalla.ADMIN_PEDIDOS -> ContenidoConEstado(state.estado(RecursoUi.ADMIN_PEDIDOS), "No hay pedidos para mostrar.", { vm.reintentar(RecursoUi.ADMIN_PEDIDOS) }) {
+                    PantallaGestionPedidos(state.pedidosAdministrativos, vm::abrirPedido, vm::actualizarEstadoPedido)
+                }
+                Pantalla.ADMIN_PROMOCIONES -> ContenidoConEstado(state.estado(RecursoUi.ADMIN_PROMOCIONES), "No hay promociones registradas.", { vm.reintentar(RecursoUi.ADMIN_PROMOCIONES) }, mostrarContenidoSinDatos = true) {
+                    PantallaGestionPromociones(state.promocionesAdministrativas, vm::guardarPromocion, vm::eliminarPromocion)
+                }
+                Pantalla.ADMIN_USUARIOS -> ContenidoConEstado(state.estado(RecursoUi.ADMIN_USUARIOS), "No hay usuarios para mostrar.", { vm.reintentar(RecursoUi.ADMIN_USUARIOS) }, mostrarContenidoSinDatos = true) {
+                    PantallaGestionUsuarios(state.usuariosAdministrativos, state.rolUsuario == "admin", vm::crearEmpleado, vm::actualizarUsuario)
+                }
+                Pantalla.ADMIN_SITIO -> ContenidoConEstado(state.estado(RecursoUi.INICIO), "No se pudo cargar la configuración del sitio.", { vm.reintentar(RecursoUi.INICIO) }) {
+                    PantallaGestionSitio(state.nombreEmpresa, state.descripcionInicio, state.mision, state.vision, state.logoUrl, state.carrusel, vm::guardarConfiguracionSitio, vm::guardarCarrusel, vm::eliminarCarrusel)
+                }
                 Pantalla.CHECKOUT -> PantallaCheckout(vm::registrarPedido)
             }
             if (state.cargando) {
@@ -100,3 +128,6 @@ fun DulceMielApp(vm: ModeloVistaTienda) {
         }
     }
 }
+
+private fun com.dulcemiel.app.viewmodel.EstadoAplicacion.estado(recurso: RecursoUi): EstadoRecurso =
+    estadosRecursos[recurso] ?: EstadoRecurso.Inicial
