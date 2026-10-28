@@ -123,6 +123,23 @@ internal fun PantallaInicio(
                 }
             }
         }
+        item {
+            Card(
+                Modifier.fillMaxWidth().clickable { go(Pantalla.BUZON_SUGERENCIAS) },
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF0C2)),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.MarkEmailUnread, contentDescription = null, tint = HoneyDark, modifier = Modifier.size(40.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Buzón de sugerencias", fontWeight = FontWeight.Bold, color = HoneyDark)
+                        Text("Cuéntanos cómo mejorar tu experiencia.", fontSize = 13.sp)
+                    }
+                    Icon(Icons.Default.ChevronRight, contentDescription = "Abrir buzón")
+                }
+            }
+        }
         if (mision.isNotBlank() || vision.isNotBlank()) {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(20.dp)) {
