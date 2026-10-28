@@ -22,17 +22,18 @@ class ModeloVistaTienda(
     private val repo: RepositorioTienda,
     private val conectividad: NetworkConnectivityHelper
 ) : ViewModel() {
+    private var pedidoIdActual: Long? = null
     var productos by mutableStateOf<List<Producto>>(emptyList()); private set
     var estado by mutableStateOf(EstadoAplicacion(
         sesionIniciada = repo.autenticado(),
         nombreUsuario = repo.nombreUsuario(), emailUsuario = repo.emailUsuario(), rolUsuario = repo.rolUsuario()
     )); private set
     init { cargarProductos(); cargarInicio(); if (repo.autenticado()) { cargarPerfil(); refrescarPrivado() } }
-    fun cargarProductos() = ejecutar {
+    fun cargarProductos() = ejecutar(RecursoUi.CATALOGO) {
         productos = repo.productos()
         estado = estado.copy(catalogoCargado = true)
     }
-    private fun cargarInicio() = ejecutar {
+    private fun cargarInicio() = ejecutar(RecursoUi.INICIO) {
         val inicio = repo.inicio()
         estado=estado.copy(
             nombreEmpresa=inicio.nombreEmpresa, descripcionInicio=inicio.descripcion,
@@ -50,16 +51,36 @@ class ModeloVistaTienda(
     }
     fun abrir(p: Producto) {
         estado = estado.copy(pantalla=Pantalla.DETALLE, productoSeleccionado=p)
-        ejecutar { estado = estado.copy(productoSeleccionado=repo.producto(p.id)) }
+        ejecutar(RecursoUi.DETALLE_PRODUCTO) { estado = estado.copy(productoSeleccionado=repo.producto(p.id)) }
     }
     fun abrirPedido(pedidoId: Long) {
+        pedidoIdActual = pedidoId
         estado = estado.copy(pantalla=Pantalla.DETALLE_PEDIDO, detallePedido=null, mensaje=null)
-        ejecutar { estado = estado.copy(detallePedido=repo.detallePedido(pedidoId)) }
+        ejecutar(RecursoUi.DETALLE_PEDIDO) { estado = estado.copy(detallePedido=repo.detallePedido(pedidoId)) }
+    }
+    fun reintentar(recurso: RecursoUi) {
+        when (recurso) {
+            RecursoUi.INICIO -> cargarInicio()
+            RecursoUi.CATALOGO -> cargarProductos()
+            RecursoUi.DETALLE_PRODUCTO -> if (estado.pantalla == Pantalla.DETALLE) {
+                estado.productoSeleccionado?.let { producto -> ejecutar(RecursoUi.DETALLE_PRODUCTO) { estado=estado.copy(productoSeleccionado=repo.producto(producto.id)) } }
+                    ?: cargarProductos()
+            }
+            RecursoUi.PERFIL -> cargarPerfil()
+            RecursoUi.CARRITO -> cargarCarrito()
+            RecursoUi.PEDIDOS -> cargarPedidos()
+            RecursoUi.DETALLE_PEDIDO -> pedidoIdActual?.let(::abrirPedido)
+            RecursoUi.DASHBOARD -> abrirDashboard()
+            RecursoUi.ADMIN_PRODUCTOS -> cargarProductosAdministrativos()
+            RecursoUi.ADMIN_PEDIDOS -> cargarPedidosAdministrativos()
+            RecursoUi.ADMIN_PROMOCIONES -> cargarPromocionesAdministrativas()
+            RecursoUi.ADMIN_USUARIOS -> cargarUsuariosAdministrativos()
+        }
     }
     fun abrirPerfil() { irA(Pantalla.PERFIL); if (repo.autenticado()) cargarPerfil() }
     fun abrirDashboard() {
         irA(Pantalla.DASHBOARD)
-        if (estado.pantalla == Pantalla.DASHBOARD) ejecutar { estado=estado.copy(resumenDashboard=repo.resumenDashboard()) }
+        if (estado.pantalla == Pantalla.DASHBOARD) ejecutar(RecursoUi.DASHBOARD) { estado=estado.copy(resumenDashboard=repo.resumenDashboard()) }
     }
     fun abrirProductosAdministrativos() {
         irA(Pantalla.ADMIN_PRODUCTOS)
@@ -78,10 +99,10 @@ class ModeloVistaTienda(
         if (estado.pantalla == Pantalla.ADMIN_USUARIOS) cargarUsuariosAdministrativos()
     }
     fun abrirAdministracionSitio() { irA(Pantalla.ADMIN_SITIO) }
-    private fun cargarProductosAdministrativos() = ejecutar { estado=estado.copy(productosAdministrativos=repo.productosAdministrativos()) }
-    private fun cargarPedidosAdministrativos() = ejecutar { estado=estado.copy(pedidosAdministrativos=repo.pedidosAdministrativos()) }
-    private fun cargarPromocionesAdministrativas() = ejecutar { estado=estado.copy(promocionesAdministrativas=repo.promocionesAdministrativas()) }
-    private fun cargarUsuariosAdministrativos() = ejecutar { estado=estado.copy(usuariosAdministrativos=repo.usuariosAdministrativos()) }
+    private fun cargarProductosAdministrativos() = ejecutar(RecursoUi.ADMIN_PRODUCTOS) { estado=estado.copy(productosAdministrativos=repo.productosAdministrativos()) }
+    private fun cargarPedidosAdministrativos() = ejecutar(RecursoUi.ADMIN_PEDIDOS) { estado=estado.copy(pedidosAdministrativos=repo.pedidosAdministrativos()) }
+    private fun cargarPromocionesAdministrativas() = ejecutar(RecursoUi.ADMIN_PROMOCIONES) { estado=estado.copy(promocionesAdministrativas=repo.promocionesAdministrativas()) }
+    private fun cargarUsuariosAdministrativos() = ejecutar(RecursoUi.ADMIN_USUARIOS) { estado=estado.copy(usuariosAdministrativos=repo.usuariosAdministrativos()) }
     fun guardarProducto(producto: com.dulcemiel.app.model.ProductoEdicion) {
         if (producto.nombre.isBlank() || producto.precio.toDoubleOrNull()?.let { it >= 0 } != true || producto.stock.toIntOrNull()?.let { it >= 0 } != true) {
             estado=estado.copy(mensaje="Completa nombre, precio y stock con valores válidos")
@@ -131,11 +152,12 @@ class ModeloVistaTienda(
         ejecutar { repo.guardarCarrusel(carrusel); cargarInicio(); estado=estado.copy(mensaje="Carrusel actualizado") }
     }
     fun eliminarCarrusel(id: Int) = ejecutar { repo.eliminarCarrusel(id); cargarInicio(); estado=estado.copy(mensaje="Imagen de carrusel eliminada") }
-    private fun cargarPerfil() = ejecutar {
+    private fun cargarPerfil() = ejecutar(RecursoUi.PERFIL) {
         repo.perfil()?.let { usuario ->
             estado=estado.copy(nombreUsuario=usuario.nombre,emailUsuario=usuario.email,rolUsuario=usuario.rol,sesionIniciada=true)
         }
     }
+    private fun cargarPedidos() = ejecutar(RecursoUi.PEDIDOS) { estado=estado.copy(pedidos=repo.pedidos()) }
     fun login(e:String,p:String) = ejecutar(cerrarSesionAlRecibir401 = false) {
         val mensaje=repo.login(e,p)
         if(repo.autenticado()) {
@@ -160,12 +182,12 @@ class ModeloVistaTienda(
         repo.agregar(p.id)
         cargarCarrito()
     }
-    fun quitar(p:Producto) = ejecutar { p.carritoId?.let { repo.actualizar(it,(estado.carrito[p.id]?:1)-1) }; cargarCarrito() }
-    fun eliminarDelCarrito(p: Producto) = ejecutar {
+    fun quitar(p:Producto) = ejecutar(RecursoUi.CARRITO) { p.carritoId?.let { repo.actualizar(it,(estado.carrito[p.id]?:1)-1) }; cargarCarrito() }
+    fun eliminarDelCarrito(p: Producto) = ejecutar(RecursoUi.CARRITO) {
         p.carritoId?.let { repo.quitar(it) }
         cargarCarrito()
     }
-    fun vaciarCarrito() = ejecutar {
+    fun vaciarCarrito() = ejecutar(RecursoUi.CARRITO) {
         repo.vaciarCarrito()
         estado=estado.copy(carrito=emptyMap(), lineasCarrito=emptyList(), totalCarritoCentimos=0, mensaje="Carrito vaciado")
     }
@@ -183,8 +205,8 @@ class ModeloVistaTienda(
         estado=estado.copy(pantalla=Pantalla.PEDIDOS,mensaje="Pedido enviado a Dulce Miel")
     }
     fun cantidadCarrito()=estado.carrito.values.sum()
-    private fun refrescarPrivado(){ cargarCarrito(); ejecutar{ estado=estado.copy(pedidos=repo.pedidos()) } }
-    private fun cargarCarrito()=ejecutar{
+    private fun refrescarPrivado(){ cargarCarrito(); cargarPedidos() }
+    private fun cargarCarrito()=ejecutar(RecursoUi.CARRITO){
         val (c, m, totalServidor) = repo.carrito()
         val lineas = c.map { productoCarrito ->
             val productoCatalogo = productos.firstOrNull { it.id == productoCarrito.id }
@@ -195,25 +217,56 @@ class ModeloVistaTienda(
         }
         estado=estado.copy(carrito=m,lineasCarrito=lineas,totalCarritoCentimos=totalServidor)
     }
-    private fun ejecutar(cerrarSesionAlRecibir401: Boolean = true, b:suspend()->Unit)=viewModelScope.launch{
-        if (!conectividad.hayConexionInternet()) {
-            estado = estado.copy(cargando=false, mensaje="Sin conexión a Internet. Revisa tu red e inténtalo nuevamente.")
-            return@launch
+    private fun ejecutar(
+        recurso: RecursoUi? = null,
+        cerrarSesionAlRecibir401: Boolean = true,
+        b:suspend()->Unit
+    )=viewModelScope.launch{
+        estado = estado.copy(operacionesActivas = estado.operacionesActivas + 1)
+        recurso?.let { actualizarEstadoRecurso(it, estado.estadoRecurso(it).iniciarCarga()) }
+        try {
+            if (!conectividad.hayConexionInternet()) throw SinConexionException()
+            b()
+            recurso?.let { actualizarEstadoRecurso(it, estado.estadoRecurso(it).completarCarga(recursoTieneDatos(it))) }
         }
-        estado=estado.copy(cargando=true)
-        try { b() }
         catch(e: HttpException) {
             if (e.code() == 401 && cerrarSesionAlRecibir401) {
                 repo.cerrarSesion()
                 estado=estado.copy(sesionIniciada=false,nombreUsuario=null,emailUsuario=null,rolUsuario=null,pantalla=Pantalla.LOGIN,mensaje="Tu sesión venció. Ingresa nuevamente.")
-            } else estado=estado.copy(mensaje=mensajeHttpParaUsuario(e, cerrarSesionAlRecibir401))
+                recurso?.let { actualizarEstadoRecurso(it, estado.estadoRecurso(it).fallarCarga("Tu sesión venció. Ingresa nuevamente.")) }
+            } else registrarError(recurso, mensajeHttpParaUsuario(e, cerrarSesionAlRecibir401))
         }
-        catch(e: SocketTimeoutException) { estado=estado.copy(mensaje="Dulce Miel tardó demasiado en responder. Inténtalo nuevamente.") }
-        catch(e: UnknownHostException) { estado=estado.copy(mensaje="No se pudo encontrar el servidor. Revisa tu conexión a Internet.") }
-        catch(e: IOException) { estado=estado.copy(mensaje="No se pudo conectar con Dulce Miel. Revisa tu conexión e inténtalo nuevamente.") }
-        catch(e: Exception) { estado=estado.copy(mensaje="No se pudo completar la acción. Inténtalo nuevamente.") }
-        finally { estado=estado.copy(cargando=false) }
+        catch(e: SinConexionException) { registrarError(recurso, "Sin conexión a Internet. Revisa tu red e inténtalo nuevamente.", sinConexion = true) }
+        catch(e: SocketTimeoutException) { registrarError(recurso, "Dulce Miel tardó demasiado en responder. Inténtalo nuevamente.") }
+        catch(e: UnknownHostException) { registrarError(recurso, "No se pudo encontrar el servidor. Revisa tu conexión a Internet.", sinConexion = true) }
+        catch(e: IOException) { registrarError(recurso, "No se pudo conectar con Dulce Miel. Revisa tu conexión e inténtalo nuevamente.", sinConexion = true) }
+        catch(e: Exception) { registrarError(recurso, "No se pudo completar la acción. Inténtalo nuevamente.") }
+        finally { estado=estado.copy(operacionesActivas=(estado.operacionesActivas - 1).coerceAtLeast(0)) }
     }
+    private fun registrarError(recurso: RecursoUi?, mensaje: String, sinConexion: Boolean = false) {
+        if (recurso == null) estado = estado.copy(mensaje = mensaje)
+        else actualizarEstadoRecurso(recurso, estado.estadoRecurso(recurso).fallarCarga(mensaje, sinConexion))
+    }
+    private fun actualizarEstadoRecurso(recurso: RecursoUi, valor: EstadoRecurso) {
+        estado = estado.copy(estadosRecursos = estado.estadosRecursos + (recurso to valor))
+    }
+    private fun EstadoAplicacion.estadoRecurso(recurso: RecursoUi): EstadoRecurso =
+        estadosRecursos[recurso] ?: EstadoRecurso.Inicial
+    private fun recursoTieneDatos(recurso: RecursoUi): Boolean = when (recurso) {
+        RecursoUi.INICIO -> true
+        RecursoUi.CATALOGO -> productos.isNotEmpty()
+        RecursoUi.DETALLE_PRODUCTO -> estado.productoSeleccionado != null
+        RecursoUi.PERFIL -> estado.nombreUsuario != null
+        RecursoUi.CARRITO -> estado.lineasCarrito.isNotEmpty()
+        RecursoUi.PEDIDOS -> estado.pedidos.isNotEmpty()
+        RecursoUi.DETALLE_PEDIDO -> estado.detallePedido != null
+        RecursoUi.DASHBOARD -> estado.resumenDashboard != null
+        RecursoUi.ADMIN_PRODUCTOS -> estado.productosAdministrativos.isNotEmpty()
+        RecursoUi.ADMIN_PEDIDOS -> estado.pedidosAdministrativos.isNotEmpty()
+        RecursoUi.ADMIN_PROMOCIONES -> estado.promocionesAdministrativas.isNotEmpty()
+        RecursoUi.ADMIN_USUARIOS -> estado.usuariosAdministrativos.isNotEmpty()
+    }
+    private class SinConexionException : Exception()
     private fun com.dulcemiel.app.model.Promocion.estaVigente(hoy: LocalDate = LocalDate.now()): Boolean {
         fun fecha(valor: String?): LocalDate? = valor?.take(10)?.let { runCatching { LocalDate.parse(it, DateTimeFormatter.ISO_LOCAL_DATE) }.getOrNull() }
         return activa && (fecha(fechaInicio)?.let { !it.isAfter(hoy) } ?: true) && (fecha(fechaFin)?.let { !it.isBefore(hoy) } ?: true)
