@@ -54,7 +54,7 @@ internal fun BarraSuperior(screen: Pantalla, sesionIniciada: Boolean, nombreUsua
             }
         },
         navigationIcon = {
-            if (screen in setOf(Pantalla.DETALLE, Pantalla.DETALLE_PEDIDO, Pantalla.PERFIL, Pantalla.DASHBOARD, Pantalla.ADMIN_PRODUCTOS, Pantalla.ADMIN_PEDIDOS, Pantalla.ADMIN_PROMOCIONES, Pantalla.ADMIN_USUARIOS, Pantalla.ADMIN_SITIO)) IconButton(onClick = home) {
+            if (screen in setOf(Pantalla.DETALLE, Pantalla.DETALLE_PEDIDO, Pantalla.BUZON_SUGERENCIAS, Pantalla.PERFIL, Pantalla.DASHBOARD, Pantalla.ADMIN_PRODUCTOS, Pantalla.ADMIN_PEDIDOS, Pantalla.ADMIN_PROMOCIONES, Pantalla.ADMIN_USUARIOS, Pantalla.ADMIN_SITIO)) IconButton(onClick = home) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver al inicio")
             }
         },
@@ -79,6 +79,7 @@ private fun Pantalla.title() = when (this) {
     Pantalla.PEDIDOS -> "Seguimiento"
     Pantalla.DETALLE_PEDIDO -> "Detalle del pedido"
     Pantalla.CONSUMO -> "Consumo"
+    Pantalla.BUZON_SUGERENCIAS -> "Buzón de sugerencias"
     Pantalla.DETALLE -> "Detalle del producto"
     Pantalla.LOGIN -> "Tu cuenta"
     Pantalla.PERFIL -> "Mi perfil"

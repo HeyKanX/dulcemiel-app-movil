@@ -9,9 +9,12 @@ import androidx.compose.runtime.remember
 import com.dulcemiel.app.network.NetworkConnectivityHelper
 import com.dulcemiel.app.network.Sesion
 import com.dulcemiel.app.network.crearServicios
+import com.dulcemiel.app.repository.RepositorioBuzonFirebase
 import com.dulcemiel.app.repository.RepositorioTienda
 import com.dulcemiel.app.ui.theme.TemaDulceMiel
+import com.dulcemiel.app.viewmodel.FabricaModeloVistaBuzon
 import com.dulcemiel.app.viewmodel.FabricaModeloVistaTienda
+import com.dulcemiel.app.viewmodel.ModeloVistaBuzon
 
 class ActividadPrincipal : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +26,9 @@ class ActividadPrincipal : ComponentActivity() {
                 val servicios = remember { crearServicios { sesion.token } }
                 val repositorio = remember { RepositorioTienda(servicios, sesion) }
                 val conectividad = remember { NetworkConnectivityHelper(applicationContext) }
-                DulceMielApp(viewModel(factory = FabricaModeloVistaTienda(repositorio, conectividad)))
+                val buzon = remember { RepositorioBuzonFirebase() }
+                val buzonVm: ModeloVistaBuzon = viewModel(factory = remember(buzon) { FabricaModeloVistaBuzon(buzon) })
+                DulceMielApp(viewModel(factory = FabricaModeloVistaTienda(repositorio, conectividad)), buzonVm)
             }
         }
     }

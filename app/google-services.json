@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "575575864534",
+    "project_id": "dulcemiel-f65a1",
+    "storage_bucket": "dulcemiel-f65a1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:575575864534:android:97fd38ad277db6dce00577",
+        "android_client_info": {
+          "package_name": "com.dulcemiel.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxZaRsBNLqx3HTqE-OFmxZf1KnCQmDRu0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

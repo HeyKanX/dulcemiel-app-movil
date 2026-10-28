@@ -33,11 +33,12 @@ import com.dulcemiel.app.ui.theme.MielOscura as HoneyDark
 import com.dulcemiel.app.ui.theme.Crema as Cream
 import com.dulcemiel.app.ui.theme.Hoja as Leaf
 import com.dulcemiel.app.ui.theme.Tinta as Ink
+import com.dulcemiel.app.viewmodel.ModeloVistaBuzon
 import com.dulcemiel.app.viewmodel.ModeloVistaTienda
 import com.dulcemiel.app.viewmodel.Pantalla
 
 @Composable
-fun DulceMielApp(vm: ModeloVistaTienda) {
+fun DulceMielApp(vm: ModeloVistaTienda, buzonVm: ModeloVistaBuzon) {
     val state = vm.estado
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.mensaje) {
@@ -60,7 +61,7 @@ fun DulceMielApp(vm: ModeloVistaTienda) {
             )
         },
         bottomBar = {
-            if (state.pantalla !in setOf(Pantalla.DETALLE, Pantalla.DETALLE_PEDIDO, Pantalla.PERFIL, Pantalla.DASHBOARD, Pantalla.ADMIN_PRODUCTOS, Pantalla.ADMIN_PEDIDOS, Pantalla.ADMIN_PROMOCIONES, Pantalla.ADMIN_USUARIOS, Pantalla.ADMIN_SITIO)) NavegacionInferior(state.pantalla, vm.cantidadCarrito(), vm::irA)
+            if (state.pantalla !in setOf(Pantalla.DETALLE, Pantalla.DETALLE_PEDIDO, Pantalla.BUZON_SUGERENCIAS, Pantalla.PERFIL, Pantalla.DASHBOARD, Pantalla.ADMIN_PRODUCTOS, Pantalla.ADMIN_PEDIDOS, Pantalla.ADMIN_PROMOCIONES, Pantalla.ADMIN_USUARIOS, Pantalla.ADMIN_SITIO)) NavegacionInferior(state.pantalla, vm.cantidadCarrito(), vm::irA)
         }
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
@@ -81,6 +82,7 @@ fun DulceMielApp(vm: ModeloVistaTienda) {
                 Pantalla.PEDIDOS -> PantallaPedidos(state.pedidos, vm::abrirPedido)
                 Pantalla.DETALLE_PEDIDO -> PantallaDetallePedido(state.detallePedido)
                 Pantalla.CONSUMO -> PantallaConsumo()
+                Pantalla.BUZON_SUGERENCIAS -> PantallaBuzonSugerencias(buzonVm)
                 Pantalla.DETALLE -> state.productoSeleccionado?.let { PantallaDetalle(it, vm::agregar) }
                 Pantalla.LOGIN -> PantallaLogin(vm::login, vm::registrar)
                 Pantalla.PERFIL -> PantallaPerfil(state.nombreUsuario, state.emailUsuario, state.rolUsuario, state.rolUsuario in setOf("admin", "empleado"), vm::abrirDashboard)

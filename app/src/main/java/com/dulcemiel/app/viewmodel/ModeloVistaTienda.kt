@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dulcemiel.app.model.Producto
+import com.dulcemiel.app.model.UbicacionEntrega
 import com.dulcemiel.app.network.EntregaBody
 import com.dulcemiel.app.network.NetworkConnectivityHelper
 import com.dulcemiel.app.repository.RepositorioTienda
@@ -168,8 +169,12 @@ class ModeloVistaTienda(
         repo.vaciarCarrito()
         estado=estado.copy(carrito=emptyMap(), lineasCarrito=emptyList(), totalCarritoCentimos=0, mensaje="Carrito vaciado")
     }
-    fun registrarPedido(n:String,t:String,e:String?,d:String,di:String,r:String?,notas:String?) = ejecutar {
-        val respuesta=repo.crearPedido(EntregaBody(n,t,e,d,di,r,notas))
+    fun registrarPedido(n:String,t:String,e:String?,d:String,di:String,r:String?,notas:String?,ubicacion:UbicacionEntrega?) = ejecutar {
+        val referenciaMapa = ubicacion?.let { "Ubicación de entrega: ${it.enlaceMapa()}" }
+        val referenciaCompleta = listOfNotNull(r?.trim()?.takeIf { it.isNotBlank() }, referenciaMapa)
+            .joinToString(" | ")
+            .takeIf { it.isNotBlank() }
+        val respuesta=repo.crearPedido(EntregaBody(n,t,e,d,di,referenciaCompleta,notas))
         if (!respuesta.success) {
             estado=estado.copy(mensaje=respuesta.message ?: "No se pudo enviar el pedido")
             return@ejecutar

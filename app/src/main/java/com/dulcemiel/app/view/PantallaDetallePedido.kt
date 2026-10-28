@@ -1,5 +1,7 @@
 package com.dulcemiel.app.view
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,10 +13,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +33,11 @@ internal fun PantallaDetallePedido(detalle: DetallePedido?) {
         return
     }
     val pedido = detalle.pedido
+    val contexto = LocalContext.current
+    val enlaceUbicacion = pedido.referencia
+        ?.substringAfter("Ubicación de entrega: ", "")
+        ?.substringBefore(" | ")
+        ?.takeIf { it.startsWith("https://maps.google.com/") }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Text(pedido.numero.ifBlank { "Pedido #${pedido.id}" }, fontWeight = FontWeight.ExtraBold, fontSize = 25.sp)
@@ -64,6 +73,11 @@ internal fun PantallaDetallePedido(detalle: DetallePedido?) {
                         pedido.direccionEntrega?.let { Text(it) }
                         pedido.distrito?.let { Text(it) }
                         pedido.referencia?.let { Text("Referencia: $it", fontSize = 13.sp) }
+                        enlaceUbicacion?.let { enlace ->
+                            Button(onClick = {
+                                contexto.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(enlace)))
+                            }) { Text("Abrir punto de entrega en Google Maps") }
+                        }
                         pedido.notas?.let { Text("Notas: $it", fontSize = 13.sp) }
                     }
                 }
