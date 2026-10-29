@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -21,17 +19,6 @@ android {
         // El emulador Android alcanza el host Windows del backend por 10.0.2.2.
         buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5000/api/\"")
 
-        // La clave de Maps se define únicamente en local.properties (no se versiona).
-        val localProperties = Properties()
-        val localPropertiesFile = rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            localPropertiesFile.inputStream().use { input -> localProperties.load(input) }
-        }
-        val mapsApiKey = providers.gradleProperty("MAPS_API_KEY")
-            .orElse(localProperties.getProperty("MAPS_API_KEY") ?: "")
-            .get()
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
-        buildConfigField("String", "MAPS_API_KEY", "\"${mapsApiKey.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
     }
 
     buildFeatures {
@@ -72,9 +59,6 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("com.google.maps.android:maps-compose:8.4.0")
-    implementation("com.google.android.gms:play-services-location:21.4.0")
-
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 
